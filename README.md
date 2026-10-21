@@ -1,8 +1,13 @@
 # 🎂 Birthday
 
-A little countdown to someone's birthday, with an I.O.U. card that says
-*"I owe you a birthday drink"*. On the day itself the page switches to a
-*Happy birthday* greeting with confetti. Click the champagne glass for a toast.
+A little countdown to someone's birthday, with a sealed I.O.U. card. The line
+on it (*"I owe you a birthday drink"* by default) stays secret until the
+countdown ends: the server leaves it out of the page and the JSON feed until
+the birthday starts. On the day the page switches to a *Happy birthday*
+greeting with confetti, the seal opens and the line unveils. Click the
+champagne glass for a toast; tapping the seal before then only says "not
+yet". Once the day is over, the countdown moves to next year and the card is
+sealed again.
 
 It's one static Go binary (standard library only, with the template, assets
 and time zone database embedded), configured entirely through environment
@@ -14,7 +19,7 @@ variables.
 | --------------------- | -------- | ---------------------------- | ---------------------------------------------------------------------- |
 | `BIRTHDAY_NAME`       | yes      |                              | Who the countdown is for (max 64 characters).                          |
 | `BIRTHDAY_DATE`       | yes      |                              | `MM-DD`, or `YYYY-MM-DD` to also show the age they are turning.        |
-| `BIRTHDAY_MESSAGE`    | no       | `I owe you a birthday drink` | The line on the I.O.U. card (max 280 characters).                      |
+| `BIRTHDAY_MESSAGE`    | no       | `I owe you a birthday drink` | The line on the I.O.U. card, revealed only on the day (max 280 characters). |
 | `BIRTHDAY_FROM`       | no       |                              | Signature under the line.                               |
 | `BIRTHDAY_TIMEZONE`   | no       | `UTC`                        | IANA zone used for midnight, e.g. `Europe/Paris`.                      |
 | `BIRTHDAY_HALLOWEEN`  | no       | `true`                       | Subtle seasonal touches: a crescent moon, two bats and a corner cobweb. |
@@ -28,7 +33,7 @@ invalid configuration stops the server at startup and lists every problem.
 
 - `GET /`: the countdown page.
 - `GET /api/countdown`: the same state as JSON (`start`, `end`, `today`,
-  `turning`, `now`, …).
+  `turning`, `now`, …). `message` is only present while `today` is true.
 - `GET /healthz`: liveness/readiness probe.
 
 ## Development

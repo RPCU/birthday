@@ -50,13 +50,16 @@ func TestIndexCountingDown(t *testing.T) {
 		t.Fatalf("status = %d", rec.Code)
 	}
 	body := rec.Body.String()
-	for _, want := range []string{"Chihiro", "I owe you a birthday drink", "Victor", "July 20", "turning 30", "10 sleeps to go"} {
+	for _, want := range []string{"Chihiro", "Victor", "July 20", "turning 30", "10 sleeps to go", "Sealed until July 20"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("page does not contain %q", want)
 		}
 	}
 	if !strings.Contains(body, `class="moon"`) {
 		t.Error("Halloween touches missing")
+	}
+	if strings.Contains(body, config.DefaultMessage) {
+		t.Error("the I.O.U. line leaks before the birthday")
 	}
 	if strings.Contains(body, "Happy birthday") {
 		t.Error("page celebrates before the day")
@@ -68,6 +71,9 @@ func TestIndexOnTheDay(t *testing.T) {
 	body := get(t, h, "/").Body.String()
 	if !strings.Contains(body, "Happy birthday") {
 		t.Error("page does not celebrate on the day")
+	}
+	if !strings.Contains(body, config.DefaultMessage) {
+		t.Error("the I.O.U. line is not revealed on the day")
 	}
 }
 
@@ -95,8 +101,22 @@ func TestCountdownJSON(t *testing.T) {
 	if got.Name != "Chihiro" || got.Today || got.Turning != 31 {
 		t.Errorf("moment = %+v", got)
 	}
+	if got.Message != "" {
+		t.Errorf("message = %q before the birthday, want it withheld", got.Message)
+	}
 	if want := "2027-07-20T00:00:00+02:00"; got.Start.Format(time.RFC3339) != want {
 		t.Errorf("start = %s, want %s", got.Start.Format(time.RFC3339), want)
+	}
+}
+
+func TestCountdownJSONOnTheDay(t *testing.T) {
+	now := time.Date(2026, time.July, 20, 8, 0, 0, 0, time.UTC)
+	var got moment
+	if err := json.NewDecoder(get(t, newTestServer(t, now, "Chihiro"), "/api/countdown").Body).Decode(&got); err != nil {
+		t.Fatal(err)
+	}
+	if !got.Today || got.Message != config.DefaultMessage {
+		t.Errorf("moment = %+v, want today with the message", got)
 	}
 }
 

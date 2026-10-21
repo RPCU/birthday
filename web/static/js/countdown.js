@@ -170,6 +170,24 @@
         }, 600);
     }
 
+    const seal = document.querySelector(".seal");
+    if (seal) {
+        const meta = seal.parentElement.querySelector(".iou-meta");
+        const original = meta.textContent;
+        let restore = 0;
+        seal.addEventListener("click", () => {
+            seal.classList.remove("nope");
+            void seal.offsetWidth;
+            seal.classList.add("nope");
+            const days = Number(seal.dataset.days);
+            meta.textContent = days === 1 ? "Not yet! One more sleep." : `Not yet! ${days} sleeps to go.`;
+            clearTimeout(restore);
+            restore = setTimeout(() => {
+                meta.textContent = original;
+            }, 2500);
+        });
+    }
+
     const glass = document.querySelector(".glass");
     if (glass) {
         glass.addEventListener("click", () => {

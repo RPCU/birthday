@@ -48,6 +48,10 @@ Use `devenv shell -- <cmd>`, which provides Go, gofumpt, golines and air.
   them into hestia's ReleaseBindings.
 - The page has a strict CSP: no inline scripts or styles, and only Google
   Fonts is allowed off-origin. Pass data to JS through `data-*` attributes.
+- The I.O.U. line is a surprise: `moment()` only fills `Message` while the
+  birthday is in progress, and the template only renders it (and the
+  `og:description`) then. Never send it to the client earlier, not in HTML,
+  JSON, meta tags or `data-*` attributes; tests assert this.
 - All dates come from the server (`data-now` corrects client clock skew).
   The JS only reloads once `/api/countdown` agrees the state changed.
 - The image's default command must start the server (`serve`): OpenChoreo

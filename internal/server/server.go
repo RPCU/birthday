@@ -56,8 +56,10 @@ func (s *Server) Handler() http.Handler {
 
 // moment is everything the page and the JSON feed say about "now".
 type moment struct {
-	Name    string    `json:"name"`
-	Message string    `json:"message"`
+	Name string `json:"name"`
+	// Message is empty until the birthday starts, so the line can't be read
+	// early from the page source or this feed.
+	Message string    `json:"message,omitempty"`
 	From    string    `json:"from,omitempty"`
 	Start   time.Time `json:"start"`
 	End     time.Time `json:"end"`
@@ -75,9 +77,13 @@ type moment struct {
 func (s *Server) moment() moment {
 	now := s.now().In(s.cfg.Location)
 	st := s.cfg.Birthday.At(now)
+	var message string
+	if st.Today {
+		message = s.cfg.Message
+	}
 	return moment{
 		Name:      s.cfg.Name,
-		Message:   s.cfg.Message,
+		Message:   message,
 		From:      s.cfg.From,
 		Start:     st.Start,
 		End:       st.End,

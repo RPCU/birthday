@@ -6,15 +6,15 @@
     <title>{{if .Today}}Happy birthday, {{.Name}}!{{else}}{{.Name}}’s birthday · {{.DateLabel}}{{end}}</title>
     <meta name="description" content="Counting down to {{.Name}}’s birthday on {{.DateLabel}}.">
     <meta property="og:title" content="{{if .Today}}Happy birthday, {{.Name}}!{{else}}{{.Name}}’s birthday is coming{{end}}">
-    <meta property="og:description" content="{{if .Today}}{{.Message}}{{else}}A sealed note opens on {{.DateLabel}}.{{end}}">
+    <meta property="og:description" content="{{if .Open}}{{.Message}}{{else}}Counting down to {{.DateLabel}}.{{end}}">
     <meta name="theme-color" content="#fbf6ef" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#1d1720" media="(prefers-color-scheme: dark)">
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400;1,9..144,500&display=swap">
-    <link rel="stylesheet" href="/static/css/birthday.css">
-    <script src="/static/js/countdown.js" defer></script>
+    <link rel="stylesheet" href="/static/css/birthday.css?v={{.AssetVersion}}">
+    <script src="/static/js/countdown.js?v={{.AssetVersion}}" defer></script>
 </head>
 <body class="{{if .Today}}is-today{{end}}{{if .Halloween}} spooky{{end}}">
     <canvas class="confetti" aria-hidden="true"></canvas>
@@ -35,7 +35,9 @@
           data-start="{{.Start.Format "2006-01-02T15:04:05Z07:00"}}"
           data-end="{{.End.Format "2006-01-02T15:04:05Z07:00"}}"
           data-now="{{.Now.Format "2006-01-02T15:04:05.000Z07:00"}}"
-          data-today="{{.Today}}">
+          data-today="{{.Today}}"
+          data-open="{{.Open}}"{{if .Open}}
+          data-until="{{.OpenUntil.Format "2006-01-02T15:04:05Z07:00"}}"{{end}}>
 
         <header class="hero">
             {{if .Today}}
@@ -65,7 +67,7 @@
         <p class="soon" id="summary" aria-live="polite">{{if eq .DaysLeft 1}}One more sleep!{{else}}{{.DaysLeft}} sleeps to go{{end}}</p>
         {{end}}
 
-        {{if .Today}}
+        {{if .Open}}
         <article class="iou is-open" aria-label="An I.O.U.">
             <div class="iou-stub" aria-hidden="true"><span>I.O.U.</span></div>
             <div class="iou-body">
@@ -79,23 +81,7 @@
                     </svg>
                 </button>
                 <p class="iou-line">{{.Message}}</p>
-                <p class="iou-meta">Redeemable today, and any day after</p>
-                {{with .From}}<p class="iou-from">— {{.}}</p>{{end}}
-            </div>
-        </article>
-        {{else}}
-        <article class="iou is-sealed" aria-label="A sealed I.O.U., opening on {{.DateLabel}}">
-            <div class="iou-stub" aria-hidden="true"><span>I.O.U.</span></div>
-            <div class="iou-body">
-                <button class="seal" type="button" aria-label="Sealed until {{.DateLabel}}" data-days="{{.DaysLeft}}">
-                    <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
-                        <path class="seal-wax" d="M32 3c5 0 7 4 11 5s9-1 11 3 0 8 2 12 6 6 5 11-6 6-7 10 1 9-3 11-8 0-12 2-6 6-11 6-7-4-11-5-9 1-11-3 0-8-2-12-6-6-5-11 6-6 7-10-1-9 3-11 8 0 12-2 6-6 11-6z"/>
-                        <circle class="seal-ring" cx="32" cy="32" r="17"/>
-                        <path class="seal-heart" d="M32 41s-9-5.6-9-11.4A4.9 4.9 0 0 1 32 27a4.9 4.9 0 0 1 9 2.6C41 35.4 32 41 32 41z"/>
-                    </svg>
-                </button>
-                <div class="sealed-lines" aria-hidden="true"><span></span><span></span></div>
-                <p class="iou-meta" aria-live="polite">Sealed until {{.DateLabel}} · opens when the countdown ends</p>
+                <p class="iou-meta">{{if .Today}}Redeemable from today{{else}}Still redeemable{{end}} · offer open until {{.LastOpenDay}}</p>
                 {{with .From}}<p class="iou-from">— {{.}}</p>{{end}}
             </div>
         </article>

@@ -11,6 +11,8 @@
     const end = Date.parse(stage.dataset.end);
     const skew = Date.parse(stage.dataset.now) - Date.now();
     const today = stage.dataset.today === "true";
+    const open = stage.dataset.open === "true";
+    const until = stage.dataset.until ? Date.parse(stage.dataset.until) : 0;
     const now = () => Date.now() + skew;
     const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -49,14 +51,15 @@
         }
     }
 
-    // When the target passes, ask the server what state we are in now and
+    // When the target passes (or the I.O.U. should hide), ask the server what
+    // state we are in now and
     // reload only once it agrees, so clock drift never causes a reload loop.
     async function settle() {
         try {
             const res = await fetch("/api/countdown", { cache: "no-store" });
             if (res.ok) {
                 const m = await res.json();
-                if (m.today !== today || Date.parse(m.start) !== start) {
+                if (m.today !== today || m.open !== open || Date.parse(m.start) !== start) {
                     window.location.reload();
                     return;
                 }
@@ -70,7 +73,7 @@
     function tick() {
         const t = now();
         const left = (today ? end : start) - t;
-        if (left <= 0) {
+        if (left <= 0 || (until && t >= until)) {
             settle();
             return;
         }
@@ -168,24 +171,6 @@
             burst(innerWidth * 0.2, innerHeight, 90, 1.1);
             burst(innerWidth * 0.8, innerHeight, 90, 1.1);
         }, 600);
-    }
-
-    const seal = document.querySelector(".seal");
-    if (seal) {
-        const meta = seal.parentElement.querySelector(".iou-meta");
-        const original = meta.textContent;
-        let restore = 0;
-        seal.addEventListener("click", () => {
-            seal.classList.remove("nope");
-            void seal.offsetWidth;
-            seal.classList.add("nope");
-            const days = Number(seal.dataset.days);
-            meta.textContent = days === 1 ? "Not yet! One more sleep." : `Not yet! ${days} sleeps to go.`;
-            clearTimeout(restore);
-            restore = setTimeout(() => {
-                meta.textContent = original;
-            }, 2500);
-        });
     }
 
     const glass = document.querySelector(".glass");

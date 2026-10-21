@@ -48,10 +48,14 @@ Use `devenv shell -- <cmd>`, which provides Go, gofumpt, golines and air.
   them into hestia's ReleaseBindings.
 - The page has a strict CSP: no inline scripts or styles, and only Google
   Fonts is allowed off-origin. Pass data to JS through `data-*` attributes.
-- The I.O.U. line is a surprise: `moment()` only fills `Message` while the
-  birthday is in progress, and the template only renders it (and the
-  `og:description`) then. Never send it to the client earlier, not in HTML,
-  JSON, meta tags or `data-*` attributes; tests assert this.
+- The whole I.O.U. card is a surprise: `moment()` only fills `Message` while
+  `Birthday.Reveal` says it's open (the birthday plus `BIRTHDAY_OPEN_DAYS`,
+  default 15), and the template renders the card, its signature and the
+  `og:description` only then. Never send any of it to the client earlier, not
+  in HTML, JSON, meta tags or `data-*` attributes; tests assert this.
+- CSS/JS URLs carry `?v=<content hash>` (`fingerprint` in the server) so a
+  deploy never pairs new HTML with stale cached assets. Keep any new asset
+  linked from the template in that fingerprint.
 - All dates come from the server (`data-now` corrects client clock skew).
   The JS only reloads once `/api/countdown` agrees the state changed.
 - The image's default command must start the server (`serve`): OpenChoreo

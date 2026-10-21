@@ -1,13 +1,13 @@
 # 🎂 Birthday
 
-A little countdown to someone's birthday, with a sealed I.O.U. card. The line
-on it (*"I owe you a birthday drink"* by default) stays secret until the
-countdown ends: the server leaves it out of the page and the JSON feed until
-the birthday starts. On the day the page switches to a *Happy birthday*
-greeting with confetti, the seal opens and the line unveils. Click the
-champagne glass for a toast; tapping the seal before then only says "not
-yet". Once the day is over, the countdown moves to next year and the card is
-sealed again.
+A little countdown to someone's birthday, hiding a surprise: an I.O.U. card
+(*"I owe you a birthday drink"* by default). Before the birthday there is no
+trace of it: the server leaves the card, its line and its signature out of
+the page, the link preview and the JSON feed. When the countdown ends the
+page switches to a *Happy birthday* greeting with confetti and the card
+appears, its line unveiling. Click the champagne glass for a toast. The card
+stays for `BIRTHDAY_OPEN_DAYS` (15) days after the birthday while the
+countdown moves on to next year, then hides until the next one.
 
 It's one static Go binary (standard library only, with the template, assets
 and time zone database embedded), configured entirely through environment
@@ -19,8 +19,9 @@ variables.
 | --------------------- | -------- | ---------------------------- | ---------------------------------------------------------------------- |
 | `BIRTHDAY_NAME`       | yes      |                              | Who the countdown is for (max 64 characters).                          |
 | `BIRTHDAY_DATE`       | yes      |                              | `MM-DD`, or `YYYY-MM-DD` to also show the age they are turning.        |
-| `BIRTHDAY_MESSAGE`    | no       | `I owe you a birthday drink` | The line on the I.O.U. card, revealed only on the day (max 280 characters). |
-| `BIRTHDAY_FROM`       | no       |                              | Signature under the line.                               |
+| `BIRTHDAY_MESSAGE`    | no       | `I owe you a birthday drink` | The line on the I.O.U. card, hidden until the birthday (max 280 characters). |
+| `BIRTHDAY_FROM`       | no       |                              | Signature under the line, hidden with it.                              |
+| `BIRTHDAY_OPEN_DAYS`  | no       | `15`                         | Days the I.O.U. stays visible after the birthday (0–365).              |
 | `BIRTHDAY_TIMEZONE`   | no       | `UTC`                        | IANA zone used for midnight, e.g. `Europe/Paris`.                      |
 | `BIRTHDAY_HALLOWEEN`  | no       | `true`                       | Subtle seasonal touches: a crescent moon, two bats and a corner cobweb. |
 | `BIRTHDAY_HOST`       | no       | all interfaces               | Listen address.                                                        |
@@ -33,7 +34,8 @@ invalid configuration stops the server at startup and lists every problem.
 
 - `GET /`: the countdown page.
 - `GET /api/countdown`: the same state as JSON (`start`, `end`, `today`,
-  `turning`, `now`, …). `message` is only present while `today` is true.
+  `turning`, `now`, `open`, `openUntil`, …). `message` is only present while
+  `open` is true.
 - `GET /healthz`: liveness/readiness probe.
 
 ## Development

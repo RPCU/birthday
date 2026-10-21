@@ -26,6 +26,7 @@ func newTestServer(t *testing.T, now time.Time, name string) http.Handler {
 		From:      "Victor",
 		Birthday:  countdown.Birthday{Year: 1996, Month: time.July, Day: 20},
 		Location:  paris,
+		OpenDays:  config.DefaultOpenDays,
 		Halloween: true,
 	}
 	s, err := New(cfg, slog.New(slog.NewTextHandler(io.Discard, nil)))
@@ -50,7 +51,7 @@ func TestIndexCountingDown(t *testing.T) {
 		t.Fatalf("status = %d", rec.Code)
 	}
 	body := rec.Body.String()
-	for _, want := range []string{"Chihiro", "Victor", "July 20", "turning 30", "10 sleeps to go", "Sealed until July 20"} {
+	for _, want := range []string{"Chihiro", "July 20", "turning 30", "10 sleeps to go"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("page does not contain %q", want)
 		}
@@ -58,8 +59,10 @@ func TestIndexCountingDown(t *testing.T) {
 	if !strings.Contains(body, `class="moon"`) {
 		t.Error("Halloween touches missing")
 	}
-	if strings.Contains(body, config.DefaultMessage) {
-		t.Error("the I.O.U. line leaks before the birthday")
+	for _, secret := range []string{config.DefaultMessage, "I.O.U.", "Victor"} {
+		if strings.Contains(body, secret) {
+			t.Errorf("the surprise leaks before the birthday: page contains %q", secret)
+		}
 	}
 	if strings.Contains(body, "Happy birthday") {
 		t.Error("page celebrates before the day")
@@ -74,6 +77,39 @@ func TestIndexOnTheDay(t *testing.T) {
 	}
 	if !strings.Contains(body, config.DefaultMessage) {
 		t.Error("the I.O.U. line is not revealed on the day")
+	}
+}
+
+func TestIOUStaysOpenAfterTheDay(t *testing.T) {
+	tests := []struct {
+		name string
+		now  time.Time
+		open bool
+	}{
+		{"five days after", time.Date(2026, time.July, 25, 12, 0, 0, 0, time.UTC), true},
+		{"last open day", time.Date(2026, time.August, 4, 12, 0, 0, 0, time.UTC), true},
+		{"the day after that", time.Date(2026, time.August, 5, 12, 0, 0, 0, time.UTC), false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			body := get(t, newTestServer(t, tt.now, "Chihiro"), "/").Body.String()
+			if got := strings.Contains(body, config.DefaultMessage); got != tt.open {
+				t.Errorf("I.O.U. shown = %v, want %v", got, tt.open)
+			}
+			if tt.open && !strings.Contains(body, "offer open until August 4") {
+				t.Error("missing the last open day")
+			}
+			if strings.Contains(body, "Happy birthday") {
+				t.Error("still celebrating after the day")
+			}
+		})
+	}
+}
+
+func TestAssetsAreFingerprinted(t *testing.T) {
+	body := get(t, newTestServer(t, time.Now(), "Chihiro"), "/").Body.String()
+	if !strings.Contains(body, "/static/css/birthday.css?v=") || !strings.Contains(body, "/static/js/countdown.js?v=") {
+		t.Error("asset URLs are not versioned")
 	}
 }
 
@@ -101,8 +137,8 @@ func TestCountdownJSON(t *testing.T) {
 	if got.Name != "Chihiro" || got.Today || got.Turning != 31 {
 		t.Errorf("moment = %+v", got)
 	}
-	if got.Message != "" {
-		t.Errorf("message = %q before the birthday, want it withheld", got.Message)
+	if got.Message != "" || got.From != "" || got.Open {
+		t.Errorf("message = %q, from = %q, open = %v before the birthday, want them withheld", got.Message, got.From, got.Open)
 	}
 	if want := "2027-07-20T00:00:00+02:00"; got.Start.Format(time.RFC3339) != want {
 		t.Errorf("start = %s, want %s", got.Start.Format(time.RFC3339), want)
@@ -115,7 +151,7 @@ func TestCountdownJSONOnTheDay(t *testing.T) {
 	if err := json.NewDecoder(get(t, newTestServer(t, now, "Chihiro"), "/api/countdown").Body).Decode(&got); err != nil {
 		t.Fatal(err)
 	}
-	if !got.Today || got.Message != config.DefaultMessage {
+	if !got.Today || !got.Open || got.Message != config.DefaultMessage {
 		t.Errorf("moment = %+v, want today with the message", got)
 	}
 }

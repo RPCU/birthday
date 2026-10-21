@@ -33,6 +33,8 @@ const (
 	maxMessageLen = 280
 	maxTeaserLen  = 140
 	maxSecretLen  = 500
+	minPINLen     = 4
+	maxPINLen     = 12
 )
 
 // Config is the validated application configuration.
@@ -53,6 +55,9 @@ type Config struct {
 	// line announcing it.
 	Secret      string
 	SecretIntro string
+	// SecretPIN, when set, must be entered to reveal Secret: the page never
+	// contains the secret, the server hands it out after checking the PIN.
+	SecretPIN string
 
 	Birthday countdown.Birthday
 	Location *time.Location
@@ -77,6 +82,7 @@ func Load(getenv func(string) string) (Config, error) {
 
 		Secret:      strings.TrimSpace(getenv("BIRTHDAY_SECRET")),
 		SecretIntro: valueOr(strings.TrimSpace(getenv("BIRTHDAY_SECRET_INTRO")), DefaultSecretIntro),
+		SecretPIN:   strings.TrimSpace(getenv("BIRTHDAY_SECRET_PIN")),
 	}
 
 	var errs []error
@@ -94,6 +100,9 @@ func Load(getenv func(string) string) (Config, error) {
 	}
 	if utf8.RuneCountInString(cfg.Secret) > maxSecretLen {
 		errs = append(errs, fmt.Errorf("BIRTHDAY_SECRET: at most %d characters", maxSecretLen))
+	}
+	if n := utf8.RuneCountInString(cfg.SecretPIN); cfg.SecretPIN != "" && (n < minPINLen || n > maxPINLen) {
+		errs = append(errs, fmt.Errorf("BIRTHDAY_SECRET_PIN: %d to %d characters", minPINLen, maxPINLen))
 	}
 	if utf8.RuneCountInString(cfg.SecretIntro) > maxTeaserLen {
 		errs = append(errs, fmt.Errorf("BIRTHDAY_SECRET_INTRO: at most %d characters", maxTeaserLen))

@@ -55,6 +55,10 @@ Use `devenv shell -- <cmd>`, which provides Go, gofumpt, golines and air.
   in HTML, JSON, meta tags or `data-*` attributes; tests assert this.
 - `BIRTHDAY_SECRET` (e.g. a gift card) is revealed with the card only, and
   only in the page: never put it in the JSON feed, meta tags or logs.
+  With `BIRTHDAY_SECRET_PIN` it isn't even in the page: only `POST /api/reveal`
+  returns it, after a constant-time PIN check behind a global token bucket
+  (`reveal.go`) and `http.CrossOriginProtection`. Never log the PIN; log wrong
+  guesses at Warn, not Error (hestia alerts on ERROR lines).
 - Before it unlocks, a teaser (`BIRTHDAY_TEASER`, gift box) stands in for
   the card. It must stay generic: never derive it from the message or the
   signature.

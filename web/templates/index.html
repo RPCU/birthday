@@ -83,7 +83,19 @@
                 <p class="iou-line">{{.Message}}</p>
                 <p class="iou-meta">{{if .Today}}Redeemable from today{{else}}Still redeemable{{end}} · offer open until {{.LastOpenDay}}</p>
                 {{with .From}}<p class="iou-from">— {{.}}</p>{{end}}
-                {{if .Secret}}
+                {{if .SecretLocked}}
+                <div class="extra">
+                    <p class="extra-intro">{{.SecretIntro}}</p>
+                    <form class="extra-pin" novalidate>
+                        <label class="extra-pin-label" for="pin">Enter your PIN to reveal it</label>
+                        <div class="extra-pin-row">
+                            <input id="pin" name="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="12" required>
+                            <button type="submit">Reveal</button>
+                        </div>
+                        <p class="extra-pin-msg" aria-live="polite"></p>
+                    </form>
+                </div>
+                {{else if .Secret}}
                 <div class="extra">
                     <p class="extra-intro">{{.SecretIntro}}</p>
                     <button class="extra-code is-hidden" type="button" aria-label="Reveal the surprise">

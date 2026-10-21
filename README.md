@@ -24,6 +24,7 @@ variables.
 | `BIRTHDAY_MESSAGE`    | no       | `I owe you a birthday drink` | The line on the I.O.U. card, hidden until the birthday (max 280 characters). |
 | `BIRTHDAY_FROM`       | no       |                              | Signature under the line, hidden with it.                              |
 | `BIRTHDAY_SECRET`     | no       |                              | A hidden extra revealed with the I.O.U. (a gift card code or link), blurred until tapped, then tap to copy. Meant to come from a secret store (max 500 characters). |
+| `BIRTHDAY_SECRET_PIN` | no       |                              | Optional PIN (4–12 characters) required to reveal the secret. When set, the page never contains the secret: `POST /api/reveal` checks the PIN server-side (constant time, ~5 tries/minute, same-origin only) and returns it. |
 | `BIRTHDAY_SECRET_INTRO` | no     | `And a little extra, just for you` | The line announcing the secret on the card. |
 | `BIRTHDAY_TEASER`     | no       | `A little something is waiting for you` | Teaser shown in the card's place before it unlocks (max 140 characters). |
 | `BIRTHDAY_OPEN_DAYS`  | no       | `15`                         | Days the I.O.U. stays visible after the birthday (0–365).              |
@@ -41,6 +42,7 @@ invalid configuration stops the server at startup and lists every problem.
 - `GET /api/countdown`: the same state as JSON (`start`, `end`, `today`,
   `turning`, `now`, `open`, `openUntil`, …). `message` is only present while
   `open` is true.
+- `POST /api/reveal` (`{"pin": "…"}`): returns the PIN-guarded secret while the card is open; 403 on a wrong PIN, 429 when throttled, 404 when there's nothing to reveal.
 - `GET /healthz`: liveness/readiness probe.
 
 ## Development

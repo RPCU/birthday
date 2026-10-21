@@ -174,10 +174,9 @@
     }
 
     // The extra: first tap reveals it, later taps copy it.
-    const extra = document.querySelector(".extra-code");
-    if (extra) {
+    function wireExtra(extra) {
         const value = extra.querySelector(".extra-value");
-        const openLink = document.querySelector(".extra-open");
+        const openLink = extra.parentElement.querySelector(".extra-open");
         extra.addEventListener("click", async () => {
             if (extra.classList.contains("is-hidden")) {
                 extra.classList.remove("is-hidden");
@@ -194,6 +193,73 @@
             } catch {
                 // No clipboard (e.g. plain HTTP): select it for a manual copy.
                 window.getSelection().selectAllChildren(value);
+            }
+        });
+    }
+
+    const extra = document.querySelector(".extra-code");
+    if (extra) wireExtra(extra);
+
+    // PIN-guarded extra: the server only hands the secret over for the right
+    // PIN, then it is shown already revealed.
+    const pinForm = document.querySelector(".extra-pin");
+    if (pinForm) {
+        const input = pinForm.querySelector("input");
+        const button = pinForm.querySelector("button");
+        const msg = pinForm.querySelector(".extra-pin-msg");
+        pinForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const pin = input.value.trim();
+            if (!pin) return;
+            button.disabled = true;
+            msg.textContent = "";
+            try {
+                const res = await fetch("/api/reveal", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ pin }),
+                });
+                if (res.ok) {
+                    const { secret, link } = await res.json();
+                    const code = document.createElement("button");
+                    code.type = "button";
+                    code.className = "extra-code";
+                    code.setAttribute("aria-label", "Copy the surprise");
+                    const value = document.createElement("span");
+                    value.className = "extra-value";
+                    value.textContent = secret;
+                    code.append(value);
+                    pinForm.replaceWith(code);
+                    if (link) {
+                        const a = document.createElement("a");
+                        a.className = "extra-open";
+                        a.href = secret;
+                        a.target = "_blank";
+                        a.rel = "noopener noreferrer";
+                        a.textContent = "Open";
+                        code.after(a);
+                    }
+                    wireExtra(code);
+                    const r = code.getBoundingClientRect();
+                    burst(r.left + r.width / 2, r.top, 60, 1.4);
+                    return;
+                }
+                if (res.status === 429) {
+                    msg.textContent = "Too many tries. Wait a moment and try again.";
+                } else if (res.status === 403) {
+                    msg.textContent = "That's not it. Try again?";
+                    input.value = "";
+                } else {
+                    msg.textContent = "Something went wrong. Reload the page and try again.";
+                }
+                pinForm.classList.remove("is-wrong");
+                void pinForm.offsetWidth;
+                pinForm.classList.add("is-wrong");
+            } catch {
+                msg.textContent = "Couldn't reach the server. Try again.";
+            } finally {
+                button.disabled = false;
+                if (document.body.contains(input)) input.focus();
             }
         });
     }

@@ -413,6 +413,66 @@ body {
     text-transform: uppercase;
 }
 
+.extra-pin-label {
+    display: block;
+    margin-bottom: 0.45rem;
+    color: var(--muted);
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+}
+
+.extra-pin-row {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.extra-pin input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.6rem 0.8rem;
+    border: 1.5px dashed var(--gold);
+    border-radius: 0.75rem;
+    background: color-mix(in srgb, var(--butter) 45%, var(--card));
+    color: var(--ink);
+    font: 500 1.05rem/1.2 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    letter-spacing: 0.3em;
+}
+
+.extra-pin input:focus-visible,
+.extra-pin button:focus-visible {
+    outline: 2px solid var(--rose);
+    outline-offset: 2px;
+}
+
+.extra-pin button {
+    flex: none;
+    padding: 0 1.1rem;
+    border: 0;
+    border-radius: 0.75rem;
+    background: var(--rose);
+    appearance: none;
+    color: #fff;
+    font: 500 0.9rem/1 var(--sans);
+    letter-spacing: 0.04em;
+    cursor: pointer;
+}
+
+.extra-pin button:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.extra-pin.is-wrong .extra-pin-row {
+    animation: wrong 0.4s ease-in-out;
+}
+
+.extra-pin-msg {
+    min-height: 1.2em;
+    margin: 0.4rem 0 0;
+    color: var(--rose);
+    font-size: 0.8rem;
+}
+
 .extra-open {
     display: inline-block;
     margin-top: 0.6rem;
@@ -684,6 +744,13 @@ body {
     91% { transform: rotate(-6deg); }
     94% { transform: rotate(4deg); }
     97% { transform: rotate(-2deg); }
+}
+
+@keyframes wrong {
+    0%, 100% { transform: none; }
+    25% { transform: translateX(-6px); }
+    50% { transform: translateX(5px); }
+    75% { transform: translateX(-3px); }
 }
 
 @keyframes unveil {

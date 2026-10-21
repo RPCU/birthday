@@ -34,6 +34,8 @@ type Server struct {
 	// assetVersion fingerprints the CSS and JS so a deploy never serves new
 	// HTML with stale cached assets.
 	assetVersion string
+	// pinTries throttles PIN guesses to /api/reveal.
+	pinTries *limiter
 	// now is swapped in tests.
 	now func() time.Time
 }
@@ -52,7 +54,7 @@ func New(cfg config.Config, log *slog.Logger) (*Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("static assets: %w", err)
 	}
-	return &Server{cfg: cfg, log: log, page: page, static: static, assetVersion: version, now: time.Now}, nil
+	return &Server{cfg: cfg, log: log, page: page, static: static, assetVersion: version, pinTries: &limiter{}, now: time.Now}, nil
 }
 
 // isLink reports whether the secret is a single web link, so the page can
@@ -80,6 +82,8 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /{$}", s.handleIndex)
 	mux.HandleFunc("GET /api/countdown", s.handleCountdown)
+	// Same-origin only: rejects cross-site form posts and fetches.
+	mux.Handle("POST /api/reveal", http.NewCrossOriginProtection().Handler(http.HandlerFunc(s.handleReveal)))
 	mux.HandleFunc("GET /healthz", handleHealth)
 	mux.Handle("GET /static/", http.StripPrefix("/static/", cacheFor(time.Hour, http.FileServerFS(s.static))))
 	return s.recoverPanics(securityHeaders(s.logRequests(mux)))
@@ -103,9 +107,11 @@ type moment struct {
 	Now time.Time `json:"now"`
 
 	Teaser string `json:"-"`
-	// Secret is set only while Open. It is rendered in the page, never in
-	// the JSON feed.
+	// Secret is set only while Open and when no PIN guards it. It is
+	// rendered in the page, never in the JSON feed. SecretLocked means a
+	// secret exists but needs the PIN (POST /api/reveal).
 	Secret       string `json:"-"`
+	SecretLocked bool   `json:"-"`
 	SecretURL    bool   `json:"-"`
 	SecretIntro  string `json:"-"`
 	DaysLeft     int    `json:"-"`
@@ -121,8 +127,14 @@ func (s *Server) moment() moment {
 	st := s.cfg.Birthday.At(now)
 	open, until := s.cfg.Birthday.Reveal(now, s.cfg.OpenDays)
 	var message, from, secret, lastOpenDay string
+	var locked bool
 	if open {
-		message, from, secret = s.cfg.Message, s.cfg.From, s.cfg.Secret
+		message, from = s.cfg.Message, s.cfg.From
+		if s.cfg.SecretPIN == "" {
+			secret = s.cfg.Secret
+		} else {
+			locked = s.cfg.Secret != ""
+		}
 		lastOpenDay = until.AddDate(0, 0, -1).Format("January 2")
 	}
 	return moment{
@@ -139,6 +151,7 @@ func (s *Server) moment() moment {
 		Teaser:       s.cfg.Teaser,
 		Secret:       secret,
 		SecretURL:    isLink(secret),
+		SecretLocked: locked,
 		SecretIntro:  s.cfg.SecretIntro,
 		DaysLeft:     st.DaysUntil(now),
 		Halloween:    s.cfg.Halloween,

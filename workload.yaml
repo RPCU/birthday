@@ -1,0 +1,14 @@
+# OpenChoreo workload descriptor, read by the generate-workload step of the
+# prebuilt-image workflow (hestia). Without it occ generates a Workload with
+# no endpoints, and the web-application ComponentType refuses to render
+# ("must have at least one HTTP" endpoint). With it, every build fully
+# replaces the Workload, so the endpoint can't drift.
+apiVersion: openchoreo.dev/v1alpha1
+metadata:
+  name: birthday
+endpoints:
+  - name: endpoint-1
+    port: 8080
+    type: HTTP
+    visibility:
+      - external

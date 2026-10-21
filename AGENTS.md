@@ -52,6 +52,10 @@ Use `devenv shell -- <cmd>`, which provides Go, gofumpt, golines and air.
   The JS only reloads once `/api/countdown` agrees the state changed.
 - The image's default command must start the server (`serve`): OpenChoreo
   cannot set command/args.
+- `workload.yaml` (repo root) is the OpenChoreo workload descriptor: it
+  declares `endpoint-1`, HTTP on 8080, which hestia's `http-route` trait and
+  the web-application ComponentType rely on. Keep its port in sync with
+  `BIRTHDAY_PORT`, and don't delete it, or deployments stop rendering.
 - Respect `prefers-reduced-motion` and keep both color schemes working when
   touching the CSS. The Halloween touches must stay faint and classy.
 

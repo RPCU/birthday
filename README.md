@@ -54,6 +54,7 @@ The flow is the same as chihiro's:
    `zot.rpcu.io/public/birthday:<8-char SHA>` (or `:<tag>` for tags).
 2. The GitHub webhook triggers OpenChoreo's `prebuilt-image` workflow (hestia,
    `openchoreo/namespaces/rpcu/projects/testing/birthday.yaml`), which waits
-   for that tag and publishes the workload.
+   for that tag and publishes the workload described by `workload.yaml`
+   (one HTTP endpoint on 8080).
 3. The name, date, line and hostname are set per environment in hestia's
    ReleaseBindings.

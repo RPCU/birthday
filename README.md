@@ -19,8 +19,8 @@ variables.
 
 | Variable              | Required | Default                      | Description                                                            |
 | --------------------- | -------- | ---------------------------- | ---------------------------------------------------------------------- |
-| `BIRTHDAY_NAME`       | yes      |                              | Who the countdown is for (max 64 characters).                          |
-| `BIRTHDAY_DATE`       | yes      |                              | `MM-DD`, or `YYYY-MM-DD` to also show the age they are turning.        |
+| `BIRTHDAY_NAME`       | no       | `friend`                     | Who the countdown is for (max 64 characters).                          |
+| `BIRTHDAY_DATE`       | no       | `01-01`                      | `MM-DD`, or `YYYY-MM-DD` to also show the age they are turning.        |
 | `BIRTHDAY_MESSAGE`    | no       | `I owe you a birthday drink` | The line on the I.O.U. card, hidden until the birthday (max 280 characters). |
 | `BIRTHDAY_FROM`       | no       |                              | Signature under the line, hidden with it.                              |
 | `BIRTHDAY_SECRET`     | no       |                              | A hidden extra revealed with the I.O.U. (a gift card code or link), blurred until tapped, then tap to copy. Meant to come from a secret store (max 500 characters). |
@@ -33,8 +33,11 @@ variables.
 | `BIRTHDAY_HOST`       | no       | all interfaces               | Listen address.                                                        |
 | `BIRTHDAY_PORT`       | no       | `8080`                       | Listen port.                                                           |
 
-A 29 February birthday is celebrated on 28 February in non-leap years. An
-invalid configuration stops the server at startup and lists every problem.
+Every setting is optional. Without `BIRTHDAY_DATE` the countdown runs to
+January 1 (a fixed day, so a missing date never opens the surprise early)
+and the server logs a warning. A 29 February birthday is celebrated on 28
+February in non-leap years. An invalid value stops the server at startup and
+lists every problem.
 
 ## Endpoints
 

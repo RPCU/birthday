@@ -87,6 +87,22 @@ func TestLoadCustom(t *testing.T) {
 	}
 }
 
+func TestLoadFallsBackWithoutNameAndDate(t *testing.T) {
+	cfg, err := Load(env(map[string]string{}))
+	if err != nil {
+		t.Fatalf("Load() with no settings: error = %v, want defaults", err)
+	}
+	if cfg.Name != DefaultName {
+		t.Errorf("Name = %q, want %q", cfg.Name, DefaultName)
+	}
+	if !cfg.DateDefaulted || cfg.Birthday.Month != time.January || cfg.Birthday.Day != 1 {
+		t.Errorf("Birthday = %+v (defaulted %v), want January 1", cfg.Birthday, cfg.DateDefaulted)
+	}
+	if cfg.Message != DefaultMessage || cfg.Teaser != DefaultTeaser || cfg.SecretIntro != DefaultSecretIntro {
+		t.Errorf("texts = %q / %q / %q, want the defaults", cfg.Message, cfg.Teaser, cfg.SecretIntro)
+	}
+}
+
 func TestLoadReportsEveryError(t *testing.T) {
 	_, err := Load(env(map[string]string{
 		"BIRTHDAY_DATE":       "20/07",
@@ -100,7 +116,7 @@ func TestLoadReportsEveryError(t *testing.T) {
 	if err == nil {
 		t.Fatal("Load() error = nil, want errors")
 	}
-	for _, want := range []string{"BIRTHDAY_NAME", "BIRTHDAY_DATE", "BIRTHDAY_TIMEZONE", "BIRTHDAY_PORT", "BIRTHDAY_MESSAGE", "BIRTHDAY_HALLOWEEN", "BIRTHDAY_OPEN_DAYS", "BIRTHDAY_SECRET_PIN"} {
+	for _, want := range []string{"BIRTHDAY_DATE", "BIRTHDAY_TIMEZONE", "BIRTHDAY_PORT", "BIRTHDAY_MESSAGE", "BIRTHDAY_HALLOWEEN", "BIRTHDAY_OPEN_DAYS", "BIRTHDAY_SECRET_PIN"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("error %q does not mention %s", err, want)
 		}

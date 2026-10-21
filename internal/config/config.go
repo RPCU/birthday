@@ -16,6 +16,10 @@ import (
 // DefaultMessage is the line shown when BIRTHDAY_MESSAGE is unset.
 const DefaultMessage = "I owe you a birthday drink"
 
+// DefaultOpenDays is how long the I.O.U. stays visible after the birthday
+// when BIRTHDAY_OPEN_DAYS is unset.
+const DefaultOpenDays = 15
+
 const (
 	maxNameLen    = 64
 	maxMessageLen = 280
@@ -34,6 +38,9 @@ type Config struct {
 
 	Birthday countdown.Birthday
 	Location *time.Location
+
+	// OpenDays is how many days after the birthday the I.O.U. stays visible.
+	OpenDays int
 
 	// Halloween adds a few quiet seasonal touches (moon, bats, a cobweb).
 	Halloween bool
@@ -73,6 +80,15 @@ func Load(getenv func(string) string) (Config, error) {
 		errs = append(errs, fmt.Errorf("BIRTHDAY_DATE: %w", err))
 	} else {
 		cfg.Birthday = b
+	}
+
+	cfg.OpenDays = DefaultOpenDays
+	if v := getenv("BIRTHDAY_OPEN_DAYS"); v != "" {
+		if days, err := strconv.Atoi(v); err != nil || days < 0 || days > 365 {
+			errs = append(errs, fmt.Errorf("BIRTHDAY_OPEN_DAYS %q: want a number of days from 0 to 365", v))
+		} else {
+			cfg.OpenDays = days
+		}
 	}
 
 	if v := getenv("BIRTHDAY_HALLOWEEN"); v == "" {

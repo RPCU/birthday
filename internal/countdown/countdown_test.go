@@ -119,6 +119,43 @@ func TestAtLeapDay(t *testing.T) {
 	}
 }
 
+func TestReveal(t *testing.T) {
+	paris, err := time.LoadLocation("Europe/Paris")
+	if err != nil {
+		t.Fatal(err)
+	}
+	b := Birthday{Month: time.December, Day: 24}
+	tests := []struct {
+		name string
+		now  time.Time
+		open bool
+	}{
+		{"the day before", time.Date(2026, time.December, 23, 23, 59, 0, 0, paris), false},
+		{"the birthday starts", time.Date(2026, time.December, 24, 0, 0, 0, 0, paris), true},
+		{"a week later, across new year", time.Date(2026, time.December, 31, 12, 0, 0, 0, paris), true},
+		{"last minute of the 15th day after", time.Date(2027, time.January, 8, 23, 59, 0, 0, paris), true},
+		{"the 16th day after", time.Date(2027, time.January, 9, 0, 0, 0, 0, paris), false},
+		{"mid-year", time.Date(2027, time.June, 1, 0, 0, 0, 0, paris), false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			open, until := b.Reveal(tt.now, 15)
+			if open != tt.open {
+				t.Fatalf("open = %v, want %v", open, tt.open)
+			}
+			if open {
+				if want := time.Date(2027, time.January, 9, 0, 0, 0, 0, paris); !until.Equal(want) {
+					t.Errorf("until = %v, want %v", until, want)
+				}
+			}
+		})
+	}
+
+	if open, _ := b.Reveal(time.Date(2026, time.December, 25, 0, 0, 0, 0, paris), 0); open {
+		t.Error("with 0 days the surprise must hide when the birthday ends")
+	}
+}
+
 func TestAtUnknownYear(t *testing.T) {
 	b := Birthday{Month: time.July, Day: 20}
 	if got := b.At(time.Date(2026, time.March, 1, 0, 0, 0, 0, time.UTC)); got.Turning != 0 {

@@ -3,6 +3,8 @@ package server
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -27,6 +29,9 @@ type Server struct {
 	log    *slog.Logger
 	page   *template.Template
 	static fs.FS
+	// assetVersion fingerprints the CSS and JS so a deploy never serves new
+	// HTML with stale cached assets.
+	assetVersion string
 	// now is swapped in tests.
 	now func() time.Time
 }
@@ -41,7 +46,24 @@ func New(cfg config.Config, log *slog.Logger) (*Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("static assets: %w", err)
 	}
-	return &Server{cfg: cfg, log: log, page: page, static: static, now: time.Now}, nil
+	version, err := fingerprint(static, "css/birthday.css", "js/countdown.js")
+	if err != nil {
+		return nil, fmt.Errorf("static assets: %w", err)
+	}
+	return &Server{cfg: cfg, log: log, page: page, static: static, assetVersion: version, now: time.Now}, nil
+}
+
+// fingerprint returns a short content hash of the named files.
+func fingerprint(fsys fs.FS, names ...string) (string, error) {
+	h := sha256.New()
+	for _, name := range names {
+		b, err := fs.ReadFile(fsys, name)
+		if err != nil {
+			return "", err
+		}
+		h.Write(b)
+	}
+	return hex.EncodeToString(h.Sum(nil))[:12], nil
 }
 
 // Handler returns the routes wrapped in the common middleware.
@@ -57,43 +79,54 @@ func (s *Server) Handler() http.Handler {
 // moment is everything the page and the JSON feed say about "now".
 type moment struct {
 	Name string `json:"name"`
-	// Message is empty until the birthday starts, so the line can't be read
+	// Message and From are empty unless Open, so the surprise can't be read
 	// early from the page source or this feed.
-	Message string    `json:"message,omitempty"`
-	From    string    `json:"from,omitempty"`
-	Start   time.Time `json:"start"`
-	End     time.Time `json:"end"`
-	Today   bool      `json:"today"`
-	Turning int       `json:"turning,omitempty"`
+	Message string `json:"message,omitempty"`
+	// Open is true from the start of the birthday until OpenUntil.
+	Open      bool      `json:"open"`
+	OpenUntil time.Time `json:"openUntil,omitzero"`
+	From      string    `json:"from,omitempty"`
+	Start     time.Time `json:"start"`
+	End       time.Time `json:"end"`
+	Today     bool      `json:"today"`
+	Turning   int       `json:"turning,omitempty"`
 	// Now lets the browser correct for a skewed local clock.
 	Now time.Time `json:"now"`
 
-	DaysLeft  int    `json:"-"`
-	Halloween bool   `json:"-"`
-	DateLabel string `json:"-"`
-	TimeZone  string `json:"-"`
+	DaysLeft     int    `json:"-"`
+	Halloween    bool   `json:"-"`
+	DateLabel    string `json:"-"`
+	LastOpenDay  string `json:"-"`
+	TimeZone     string `json:"-"`
+	AssetVersion string `json:"-"`
 }
 
 func (s *Server) moment() moment {
 	now := s.now().In(s.cfg.Location)
 	st := s.cfg.Birthday.At(now)
-	var message string
-	if st.Today {
-		message = s.cfg.Message
+	open, until := s.cfg.Birthday.Reveal(now, s.cfg.OpenDays)
+	var message, from, lastOpenDay string
+	if open {
+		message, from = s.cfg.Message, s.cfg.From
+		lastOpenDay = until.AddDate(0, 0, -1).Format("January 2")
 	}
 	return moment{
-		Name:      s.cfg.Name,
-		Message:   message,
-		From:      s.cfg.From,
-		Start:     st.Start,
-		End:       st.End,
-		Today:     st.Today,
-		Turning:   st.Turning,
-		Now:       now,
-		DaysLeft:  st.DaysUntil(now),
-		Halloween: s.cfg.Halloween,
-		DateLabel: st.Start.Format("January 2"),
-		TimeZone:  s.cfg.Location.String(),
+		Name:         s.cfg.Name,
+		Message:      message,
+		Open:         open,
+		OpenUntil:    until,
+		From:         from,
+		Start:        st.Start,
+		End:          st.End,
+		Today:        st.Today,
+		Turning:      st.Turning,
+		Now:          now,
+		DaysLeft:     st.DaysUntil(now),
+		Halloween:    s.cfg.Halloween,
+		DateLabel:    st.Start.Format("January 2"),
+		LastOpenDay:  lastOpenDay,
+		TimeZone:     s.cfg.Location.String(),
+		AssetVersion: s.assetVersion,
 	}
 }
 

@@ -34,8 +34,8 @@ Commands:
   version   print the version
 
 Configuration comes from the environment: BIRTHDAY_NAME and BIRTHDAY_DATE are
-required; BIRTHDAY_MESSAGE, BIRTHDAY_FROM, BIRTHDAY_TIMEZONE, BIRTHDAY_HALLOWEEN,
-BIRTHDAY_HOST and BIRTHDAY_PORT are optional.
+required; BIRTHDAY_MESSAGE, BIRTHDAY_FROM, BIRTHDAY_OPEN_DAYS, BIRTHDAY_TIMEZONE,
+BIRTHDAY_HALLOWEEN, BIRTHDAY_HOST and BIRTHDAY_PORT are optional.
 `
 
 // Execute runs the command named by args and returns the process exit code.

@@ -30,6 +30,9 @@ func TestLoadDefaults(t *testing.T) {
 	if !cfg.Halloween {
 		t.Error("Halloween = false, want on by default")
 	}
+	if cfg.OpenDays != DefaultOpenDays {
+		t.Errorf("OpenDays = %d, want %d", cfg.OpenDays, DefaultOpenDays)
+	}
 	if cfg.Location != time.UTC {
 		t.Errorf("Location = %v, want UTC", cfg.Location)
 	}
@@ -47,6 +50,7 @@ func TestLoadCustom(t *testing.T) {
 		"BIRTHDAY_TIMEZONE":  "Asia/Tokyo",
 		"BIRTHDAY_PORT":      "9000",
 		"BIRTHDAY_HALLOWEEN": "false",
+		"BIRTHDAY_OPEN_DAYS": "3",
 	}))
 	if err != nil {
 		t.Fatalf("Load() error = %v", err)
@@ -56,6 +60,9 @@ func TestLoadCustom(t *testing.T) {
 	}
 	if cfg.Halloween {
 		t.Error("Halloween = true, want false")
+	}
+	if cfg.OpenDays != 3 {
+		t.Errorf("OpenDays = %d, want 3", cfg.OpenDays)
 	}
 	if cfg.Location.String() != "Asia/Tokyo" {
 		t.Errorf("Location = %v", cfg.Location)
@@ -68,12 +75,13 @@ func TestLoadReportsEveryError(t *testing.T) {
 		"BIRTHDAY_TIMEZONE":  "Mars/Olympus",
 		"BIRTHDAY_PORT":      "http",
 		"BIRTHDAY_HALLOWEEN": "maybe",
+		"BIRTHDAY_OPEN_DAYS": "-1",
 		"BIRTHDAY_MESSAGE":   strings.Repeat("x", maxMessageLen+1),
 	}))
 	if err == nil {
 		t.Fatal("Load() error = nil, want errors")
 	}
-	for _, want := range []string{"BIRTHDAY_NAME", "BIRTHDAY_DATE", "BIRTHDAY_TIMEZONE", "BIRTHDAY_PORT", "BIRTHDAY_MESSAGE", "BIRTHDAY_HALLOWEEN"} {
+	for _, want := range []string{"BIRTHDAY_NAME", "BIRTHDAY_DATE", "BIRTHDAY_TIMEZONE", "BIRTHDAY_PORT", "BIRTHDAY_MESSAGE", "BIRTHDAY_HALLOWEEN", "BIRTHDAY_OPEN_DAYS"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("error %q does not mention %s", err, want)
 		}

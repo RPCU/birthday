@@ -79,6 +79,23 @@ func (b Birthday) At(now time.Time) State {
 	}
 }
 
+// Reveal reports whether a surprise tied to the birthday is visible at now:
+// from the start of the birthday until days full days after it ends. until is
+// the midnight it hides again.
+func (b Birthday) Reveal(now time.Time, days int) (open bool, until time.Time) {
+	loc := now.Location()
+	// The most recent birthday may fall in the previous year (e.g. 24 December
+	// seen on 3 January).
+	for _, year := range []int{now.Year(), now.Year() - 1} {
+		start := b.Occurrence(year, loc)
+		until := time.Date(start.Year(), start.Month(), start.Day()+1+days, 0, 0, 0, 0, loc)
+		if !now.Before(start) && now.Before(until) {
+			return true, until
+		}
+	}
+	return false, time.Time{}
+}
+
 // DaysUntil counts the calendar days from now's date to the birthday's date:
 // 0 on the day itself, 1 the day before.
 func (s State) DaysUntil(now time.Time) int {

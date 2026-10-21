@@ -44,7 +44,10 @@ Use `devenv shell -- <cmd>`, which provides Go, gofumpt, golines and air.
 - Logging is `log/slog` (JSON) only. Hestia's `default-error-rate` alert fires
   on **any `ERROR` log line**, so log at ERROR only for real failures.
 - New settings are `BIRTHDAY_*` env vars, validated in `config.Load`, which
-  reports every invalid setting at once. Document them in README.md and wire
+  reports every invalid setting at once. Every setting is optional with a
+  default (hestia leaves some unset in production/public); keep it that way.
+  The default date is a fixed January 1, never "today", so a missing date
+  can't open the surprise early. Document them in README.md and wire
   them into hestia's ReleaseBindings.
 - The page has a strict CSP: no inline scripts or styles, and only Google
   Fonts is allowed off-origin. Pass data to JS through `data-*` attributes.

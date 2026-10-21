@@ -13,6 +13,13 @@ import (
 	"github.com/Banh-Canh/birthday/internal/countdown"
 )
 
+// DefaultName is who the countdown is for when BIRTHDAY_NAME is unset.
+const DefaultName = "friend"
+
+// DefaultDate is used when BIRTHDAY_DATE is unset. It is deliberately a fixed
+// day rather than "today", so a missing date never opens the surprise early.
+const DefaultDate = "01-01"
+
 // DefaultMessage is the line shown when BIRTHDAY_MESSAGE is unset.
 const DefaultMessage = "I owe you a birthday drink"
 
@@ -60,7 +67,10 @@ type Config struct {
 	SecretPIN string
 
 	Birthday countdown.Birthday
-	Location *time.Location
+	// DateDefaulted reports that BIRTHDAY_DATE was unset and DefaultDate is
+	// in use, so the server can warn about it.
+	DateDefaulted bool
+	Location      *time.Location
 
 	// OpenDays is how many days after the birthday the I.O.U. stays visible.
 	OpenDays int
@@ -75,7 +85,7 @@ func Load(getenv func(string) string) (Config, error) {
 	cfg := Config{
 		Host:    getenv("BIRTHDAY_HOST"),
 		Port:    valueOr(getenv("BIRTHDAY_PORT"), "8080"),
-		Name:    strings.TrimSpace(getenv("BIRTHDAY_NAME")),
+		Name:    valueOr(strings.TrimSpace(getenv("BIRTHDAY_NAME")), DefaultName),
 		Message: valueOr(strings.TrimSpace(getenv("BIRTHDAY_MESSAGE")), DefaultMessage),
 		From:    strings.TrimSpace(getenv("BIRTHDAY_FROM")),
 		Teaser:  valueOr(strings.TrimSpace(getenv("BIRTHDAY_TEASER")), DefaultTeaser),
@@ -88,9 +98,6 @@ func Load(getenv func(string) string) (Config, error) {
 	var errs []error
 	if port, err := strconv.Atoi(cfg.Port); err != nil || port < 1 || port > 65535 {
 		errs = append(errs, fmt.Errorf("BIRTHDAY_PORT %q: want a port number", cfg.Port))
-	}
-	if cfg.Name == "" {
-		errs = append(errs, errors.New("BIRTHDAY_NAME is required"))
 	}
 	if utf8.RuneCountInString(cfg.Name) > maxNameLen {
 		errs = append(errs, fmt.Errorf("BIRTHDAY_NAME: at most %d characters", maxNameLen))
@@ -114,9 +121,9 @@ func Load(getenv func(string) string) (Config, error) {
 		errs = append(errs, fmt.Errorf("BIRTHDAY_FROM: at most %d characters", maxNameLen))
 	}
 
-	if date := getenv("BIRTHDAY_DATE"); date == "" {
-		errs = append(errs, errors.New("BIRTHDAY_DATE is required (MM-DD or YYYY-MM-DD)"))
-	} else if b, err := countdown.Parse(date); err != nil {
+	date := strings.TrimSpace(getenv("BIRTHDAY_DATE"))
+	cfg.DateDefaulted = date == ""
+	if b, err := countdown.Parse(valueOr(date, DefaultDate)); err != nil {
 		errs = append(errs, fmt.Errorf("BIRTHDAY_DATE: %w", err))
 	} else {
 		cfg.Birthday = b

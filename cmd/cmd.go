@@ -33,10 +33,10 @@ Commands:
   serve     serve the countdown page (default)
   version   print the version
 
-Configuration comes from the environment: BIRTHDAY_NAME and BIRTHDAY_DATE are
-required; BIRTHDAY_MESSAGE, BIRTHDAY_FROM, BIRTHDAY_SECRET, BIRTHDAY_SECRET_PIN, BIRTHDAY_SECRET_INTRO, BIRTHDAY_TEASER,
-BIRTHDAY_OPEN_DAYS, BIRTHDAY_TIMEZONE,
-BIRTHDAY_HALLOWEEN, BIRTHDAY_HOST and BIRTHDAY_PORT are optional.
+Configuration comes from BIRTHDAY_* environment variables, all optional:
+NAME (default "friend"), DATE (MM-DD or YYYY-MM-DD, default 01-01), MESSAGE,
+FROM, TEASER, SECRET, SECRET_PIN, SECRET_INTRO, OPEN_DAYS, TIMEZONE,
+HALLOWEEN, HOST and PORT. See the README.
 `
 
 // Execute runs the command named by args and returns the process exit code.
@@ -89,6 +89,9 @@ func serve() int {
 
 	errCh := make(chan error, 1)
 	go func() { errCh <- httpServer.ListenAndServe() }()
+	if cfg.DateDefaulted {
+		logger.Warn("BIRTHDAY_DATE is unset, counting down to the default date", "date", config.DefaultDate)
+	}
 	logger.Info(
 		"serving",
 		"addr", httpServer.Addr,

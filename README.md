@@ -23,6 +23,8 @@ variables.
 | `BIRTHDAY_DATE`       | yes      |                              | `MM-DD`, or `YYYY-MM-DD` to also show the age they are turning.        |
 | `BIRTHDAY_MESSAGE`    | no       | `I owe you a birthday drink` | The line on the I.O.U. card, hidden until the birthday (max 280 characters). |
 | `BIRTHDAY_FROM`       | no       |                              | Signature under the line, hidden with it.                              |
+| `BIRTHDAY_SECRET`     | no       |                              | A hidden extra revealed with the I.O.U. (a gift card code or link), blurred until tapped, then tap to copy. Meant to come from a secret store (max 500 characters). |
+| `BIRTHDAY_SECRET_INTRO` | no     | `And a little extra, just for you` | The line announcing the secret on the card. |
 | `BIRTHDAY_TEASER`     | no       | `A little something is waiting for you` | Teaser shown in the card's place before it unlocks (max 140 characters). |
 | `BIRTHDAY_OPEN_DAYS`  | no       | `15`                         | Days the I.O.U. stays visible after the birthday (0–365).              |
 | `BIRTHDAY_TIMEZONE`   | no       | `UTC`                        | IANA zone used for midnight, e.g. `Europe/Paris`.                      |

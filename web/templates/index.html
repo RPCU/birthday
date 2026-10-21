@@ -83,6 +83,16 @@
                 <p class="iou-line">{{.Message}}</p>
                 <p class="iou-meta">{{if .Today}}Redeemable from today{{else}}Still redeemable{{end}} · offer open until {{.LastOpenDay}}</p>
                 {{with .From}}<p class="iou-from">— {{.}}</p>{{end}}
+                {{if .Secret}}
+                <div class="extra">
+                    <p class="extra-intro">{{.SecretIntro}}</p>
+                    <button class="extra-code is-hidden" type="button" aria-label="Reveal the surprise">
+                        <span class="extra-value">{{.Secret}}</span>
+                        <span class="extra-hint" aria-hidden="true">Tap to reveal</span>
+                    </button>
+                    {{if .SecretURL}}<a class="extra-open" href="{{.Secret}}" target="_blank" rel="noopener noreferrer" hidden>Open</a>{{end}}
+                </div>
+                {{end}}
             </div>
         </article>
         {{else}}

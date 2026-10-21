@@ -173,6 +173,31 @@
         }, 600);
     }
 
+    // The extra: first tap reveals it, later taps copy it.
+    const extra = document.querySelector(".extra-code");
+    if (extra) {
+        const value = extra.querySelector(".extra-value");
+        const openLink = document.querySelector(".extra-open");
+        extra.addEventListener("click", async () => {
+            if (extra.classList.contains("is-hidden")) {
+                extra.classList.remove("is-hidden");
+                extra.setAttribute("aria-label", "Copy the surprise");
+                if (openLink) openLink.hidden = false;
+                const r = extra.getBoundingClientRect();
+                burst(r.left + r.width / 2, r.top, 50, 1.4);
+                return;
+            }
+            try {
+                await navigator.clipboard.writeText(value.textContent.trim());
+                extra.classList.add("is-copied");
+                setTimeout(() => extra.classList.remove("is-copied"), 1600);
+            } catch {
+                // No clipboard (e.g. plain HTTP): select it for a manual copy.
+                window.getSelection().selectAllChildren(value);
+            }
+        });
+    }
+
     const glass = document.querySelector(".glass");
     if (glass) {
         glass.addEventListener("click", () => {

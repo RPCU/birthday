@@ -16,6 +16,11 @@ import (
 
 func newTestServer(t *testing.T, now time.Time, name string) http.Handler {
 	t.Helper()
+	return newTestServerWith(t, now, name, func(*config.Config) {})
+}
+
+func newTestServerWith(t *testing.T, now time.Time, name string, tweak func(*config.Config)) http.Handler {
+	t.Helper()
 	paris, err := time.LoadLocation("Europe/Paris")
 	if err != nil {
 		t.Fatal(err)
@@ -30,6 +35,7 @@ func newTestServer(t *testing.T, now time.Time, name string) http.Handler {
 		OpenDays:  config.DefaultOpenDays,
 		Halloween: true,
 	}
+	tweak(&cfg)
 	s, err := New(cfg, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	if err != nil {
 		t.Fatal(err)
@@ -107,6 +113,42 @@ func TestIOUStaysOpenAfterTheDay(t *testing.T) {
 				t.Error("still celebrating after the day")
 			}
 		})
+	}
+}
+
+func TestSecretOnlyOnceOpen(t *testing.T) {
+	const code = "UBER-GIFT-7Q2X"
+	withSecret := func(c *config.Config) {
+		c.Secret = code
+		c.SecretIntro = "And a ride to get there"
+	}
+	before := time.Date(2026, time.July, 10, 12, 0, 0, 0, time.UTC)
+	for _, path := range []string{"/", "/api/countdown"} {
+		if body := get(t, newTestServerWith(t, before, "Chihiro", withSecret), path).Body.String(); strings.Contains(body, code) {
+			t.Errorf("GET %s leaks the secret before the birthday", path)
+		}
+	}
+
+	onTheDay := time.Date(2026, time.July, 20, 8, 0, 0, 0, time.UTC)
+	h := newTestServerWith(t, onTheDay, "Chihiro", withSecret)
+	page := get(t, h, "/").Body.String()
+	if !strings.Contains(page, code) || !strings.Contains(page, "And a ride to get there") {
+		t.Error("the secret and its intro are not on the opened card")
+	}
+	if strings.Contains(page, "extra-open") {
+		t.Error("a code that is not a link must not get an Open link")
+	}
+	if strings.Contains(get(t, h, "/api/countdown").Body.String(), code) {
+		t.Error("the secret must never be in the JSON feed")
+	}
+
+	link := func(c *config.Config) { c.Secret = "https://r.uber.com/gift/abc" }
+	if page := get(t, newTestServerWith(t, onTheDay, "Chihiro", link), "/").Body.String(); !strings.Contains(page, `href="https://r.uber.com/gift/abc"`) {
+		t.Error("a link secret should get an Open link")
+	}
+
+	if page := get(t, newTestServer(t, onTheDay, "Chihiro"), "/").Body.String(); strings.Contains(page, `class="extra"`) {
+		t.Error("no secret configured, but the extra block is rendered")
 	}
 }
 

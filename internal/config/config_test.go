@@ -1,0 +1,81 @@
+package config
+
+import (
+	"strings"
+	"testing"
+	"time"
+)
+
+func env(m map[string]string) func(string) string {
+	return func(k string) string { return m[k] }
+}
+
+func TestLoadDefaults(t *testing.T) {
+	cfg, err := Load(env(map[string]string{
+		"BIRTHDAY_NAME": "  Chihiro ",
+		"BIRTHDAY_DATE": "07-20",
+	}))
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.Name != "Chihiro" {
+		t.Errorf("Name = %q, want trimmed %q", cfg.Name, "Chihiro")
+	}
+	if cfg.Message != DefaultMessage {
+		t.Errorf("Message = %q, want default", cfg.Message)
+	}
+	if cfg.Port != "8080" || cfg.Host != "" {
+		t.Errorf("listen = %q:%q, want :8080", cfg.Host, cfg.Port)
+	}
+	if !cfg.Halloween {
+		t.Error("Halloween = false, want on by default")
+	}
+	if cfg.Location != time.UTC {
+		t.Errorf("Location = %v, want UTC", cfg.Location)
+	}
+	if cfg.Birthday.Month != time.July || cfg.Birthday.Day != 20 {
+		t.Errorf("Birthday = %+v", cfg.Birthday)
+	}
+}
+
+func TestLoadCustom(t *testing.T) {
+	cfg, err := Load(env(map[string]string{
+		"BIRTHDAY_NAME":      "Haku",
+		"BIRTHDAY_DATE":      "1996-02-29",
+		"BIRTHDAY_MESSAGE":   "Dinner is on me",
+		"BIRTHDAY_FROM":      "Victor",
+		"BIRTHDAY_TIMEZONE":  "Asia/Tokyo",
+		"BIRTHDAY_PORT":      "9000",
+		"BIRTHDAY_HALLOWEEN": "false",
+	}))
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.Message != "Dinner is on me" || cfg.From != "Victor" || cfg.Port != "9000" {
+		t.Errorf("cfg = %+v", cfg)
+	}
+	if cfg.Halloween {
+		t.Error("Halloween = true, want false")
+	}
+	if cfg.Location.String() != "Asia/Tokyo" {
+		t.Errorf("Location = %v", cfg.Location)
+	}
+}
+
+func TestLoadReportsEveryError(t *testing.T) {
+	_, err := Load(env(map[string]string{
+		"BIRTHDAY_DATE":      "20/07",
+		"BIRTHDAY_TIMEZONE":  "Mars/Olympus",
+		"BIRTHDAY_PORT":      "http",
+		"BIRTHDAY_HALLOWEEN": "maybe",
+		"BIRTHDAY_MESSAGE":   strings.Repeat("x", maxMessageLen+1),
+	}))
+	if err == nil {
+		t.Fatal("Load() error = nil, want errors")
+	}
+	for _, want := range []string{"BIRTHDAY_NAME", "BIRTHDAY_DATE", "BIRTHDAY_TIMEZONE", "BIRTHDAY_PORT", "BIRTHDAY_MESSAGE", "BIRTHDAY_HALLOWEEN"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error %q does not mention %s", err, want)
+		}
+	}
+}

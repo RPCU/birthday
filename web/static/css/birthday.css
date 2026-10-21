@@ -1,0 +1,552 @@
+/* Birthday: paper, plum ink, blush and a touch of gold. */
+:root {
+    --paper: #fbf6ef;
+    --paper-glow: #f7e3e1;
+    --card: #fffdf9;
+    --ink: #3b2a3f;
+    --muted: #7d6b80;
+    --line: #eadfd3;
+    --rose: #c9707f;
+    --blush: #f2c4c9;
+    --gold: #c8a24a;
+    --butter: #f6e7b8;
+    --pumpkin: #d08a52;
+    --shadow: 0 1px 2px rgba(59, 42, 63, 0.06), 0 12px 32px -12px rgba(59, 42, 63, 0.18);
+
+    --serif: "Fraunces", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    --sans: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+    color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --paper: #1d1720;
+        --paper-glow: #2c1f2c;
+        --card: #271f2b;
+        --ink: #f4e9e4;
+        --muted: #b7a6b5;
+        --line: #3a2f3e;
+        --rose: #e69aa6;
+        --blush: #6b3f4c;
+        --gold: #e0c06e;
+        --butter: #4a3e25;
+        --pumpkin: #e3a06a;
+        --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 16px 40px -16px rgba(0, 0, 0, 0.6);
+    }
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    min-height: 100%;
+}
+
+body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background:
+        radial-gradient(60rem 40rem at 10% -10%, var(--paper-glow), transparent 60%),
+        radial-gradient(50rem 36rem at 110% 110%, var(--butter), transparent 60%),
+        var(--paper);
+    background-attachment: fixed;
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+}
+
+/* Layout */
+.stage {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    width: min(44rem, 100% - 2rem);
+    margin: 0 auto;
+    padding: clamp(2.5rem, 8vh, 6rem) 0 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(1.75rem, 4vh, 2.75rem);
+    text-align: center;
+}
+
+/* Hero */
+.hero {
+    animation: rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.eyebrow {
+    margin: 0 0 0.5rem;
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+}
+
+.name {
+    margin: 0;
+    font-family: var(--serif);
+    font-size: clamp(3rem, 12vw, 6.25rem);
+    font-style: italic;
+    font-weight: 400;
+    font-variation-settings: "opsz" 144;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
+}
+
+.name .hb {
+    display: block;
+    margin-bottom: 0.15em;
+    color: var(--rose);
+    font-size: 0.42em;
+    letter-spacing: 0;
+}
+
+.flourish {
+    display: block;
+    width: min(15rem, 70%);
+    height: 1rem;
+    margin: 0.6rem auto 0.4rem;
+    fill: none;
+    stroke: var(--rose);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-dasharray: 260;
+    stroke-dashoffset: 260;
+    animation: draw 1.4s 0.4s ease-out forwards;
+}
+
+.date {
+    margin: 0;
+    font-family: var(--serif);
+    font-size: 1.2rem;
+    color: var(--muted);
+}
+
+.date .dot {
+    margin: 0 0.5em;
+    color: var(--gold);
+}
+
+/* Countdown */
+.clock {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(0.5rem, 2vw, 1rem);
+    width: 100%;
+    animation: rise 0.9s 0.15s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: clamp(0.9rem, 3vw, 1.4rem) 0.25rem;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 1.25rem;
+    box-shadow: var(--shadow);
+}
+
+.num {
+    font-family: var(--serif);
+    font-size: clamp(2rem, 8vw, 3.4rem);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums lining-nums;
+    line-height: 1;
+}
+
+.num.tick {
+    animation: tick 0.35s ease-out;
+}
+
+.unit {
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.soon {
+    margin: -0.75rem 0 0;
+    color: var(--muted);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1.1rem;
+}
+
+.is-today .soon {
+    margin: 0;
+    color: var(--ink);
+    font-size: 1.3rem;
+}
+
+/* The I.O.U. card */
+.iou {
+    display: flex;
+    width: min(32rem, 100%);
+    text-align: left;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 1.25rem;
+    box-shadow: var(--shadow);
+    animation: rise 0.9s 0.3s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.iou-stub {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 3.25rem;
+    flex: none;
+    background: repeating-linear-gradient(-45deg, var(--blush) 0 6px, transparent 6px 12px);
+    border-radius: 1.25rem 0 0 1.25rem;
+    border-right: 2px dashed var(--line);
+}
+
+/* Ticket notches on the perforation. */
+.iou-stub::before,
+.iou-stub::after {
+    content: "";
+    position: absolute;
+    right: -0.6rem;
+    width: 1.1rem;
+    height: 1.1rem;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 50%;
+}
+
+.iou-stub::before {
+    top: -0.6rem;
+}
+
+.iou-stub::after {
+    bottom: -0.6rem;
+}
+
+.iou-stub span {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-family: var(--serif);
+    font-weight: 600;
+    letter-spacing: 0.3em;
+    color: var(--ink);
+}
+
+.iou-body {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    padding: 1.5rem 5rem 1.4rem 1.6rem;
+}
+
+.iou-line {
+    margin: 0 0 0.5rem;
+    font-family: var(--serif);
+    font-size: clamp(1.35rem, 4.5vw, 1.7rem);
+    font-style: italic;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.iou-meta {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+}
+
+.iou-from {
+    margin: 0.75rem 0 0;
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    color: var(--rose);
+}
+
+/* Champagne glass: click for cheers */
+.glass {
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    width: 3rem;
+    height: 5rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    transform: translateY(-50%) rotate(8deg);
+    transform-origin: 50% 90%;
+    transition: transform 0.4s cubic-bezier(0.3, 1.6, 0.5, 1);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.glass:hover {
+    transform: translateY(-50%) rotate(-4deg);
+}
+
+.glass:focus-visible {
+    outline: 2px solid var(--rose);
+    outline-offset: 4px;
+    border-radius: 0.75rem;
+}
+
+.glass.cheers {
+    animation: clink 0.6s ease-in-out;
+}
+
+.glass svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.glass-line {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.glass-drink {
+    fill: var(--butter);
+    stroke: var(--gold);
+    stroke-width: 0.5;
+}
+
+.bubble {
+    fill: var(--gold);
+    animation: fizz 2.4s ease-in infinite;
+}
+
+.bubble:nth-of-type(2) {
+    animation-delay: 0.8s;
+}
+
+.bubble:nth-of-type(3) {
+    animation-delay: 1.6s;
+}
+
+/* Floating background dots */
+.sky {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.sky span {
+    position: absolute;
+    bottom: -3rem;
+    width: 0.9rem;
+    height: 0.9rem;
+    border-radius: 50%;
+    background: var(--blush);
+    opacity: 0.55;
+    animation: float 18s linear infinite;
+}
+
+.sky span:nth-child(3n) {
+    background: var(--butter);
+}
+
+.sky span:nth-child(4n) {
+    width: 0.5rem;
+    height: 0.5rem;
+    background: var(--gold);
+    opacity: 0.35;
+}
+
+.sky span:nth-child(1) { left: 6%; animation-duration: 22s; }
+.sky span:nth-child(2) { left: 18%; animation-delay: -6s; }
+.sky span:nth-child(3) { left: 31%; animation-duration: 26s; animation-delay: -12s; }
+.sky span:nth-child(4) { left: 47%; animation-delay: -3s; }
+.sky span:nth-child(5) { left: 62%; animation-duration: 24s; animation-delay: -15s; }
+.sky span:nth-child(6) { left: 74%; animation-delay: -9s; }
+.sky span:nth-child(7) { left: 86%; animation-duration: 20s; animation-delay: -1s; }
+.sky span:nth-child(8) { left: 94%; animation-delay: -13s; }
+
+/* Halloween: a crescent moon, two bats and a corner cobweb, all kept faint. */
+.moon,
+.web,
+.bat {
+    position: absolute;
+    display: block;
+}
+
+.moon {
+    top: clamp(1.25rem, 5vh, 3rem);
+    right: clamp(1.25rem, 6vw, 5rem);
+    width: clamp(2.25rem, 5vw, 3.5rem);
+    fill: var(--gold);
+    opacity: 0.45;
+    filter: drop-shadow(0 0 18px var(--butter));
+}
+
+.web {
+    top: -1px;
+    left: -1px;
+    width: clamp(5rem, 14vw, 8rem);
+    fill: none;
+    stroke: var(--muted);
+    stroke-width: 0.7;
+    opacity: 0.28;
+}
+
+.bat {
+    width: 2.1rem;
+    fill: var(--ink);
+    opacity: 0.16;
+    animation: flutter 0.5s ease-in-out infinite alternate, glide 38s linear infinite;
+}
+
+.bat-a {
+    top: 18vh;
+    animation-delay: 0s, -8s;
+}
+
+.bat-b {
+    top: 32vh;
+    width: 1.5rem;
+    animation-duration: 0.42s, 52s;
+    animation-delay: 0s, -30s;
+}
+
+.spooky .sky span:nth-child(5n) {
+    background: var(--pumpkin);
+    opacity: 0.35;
+}
+
+.confetti {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.foot {
+    position: relative;
+    z-index: 1;
+    padding: 1.5rem 1rem 2rem;
+    color: var(--muted);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-align: center;
+}
+
+/* Phones: the glass moves above the line instead of beside it. */
+@media (max-width: 30rem) {
+    .iou-body {
+        padding: 1.25rem 1.25rem 1.25rem 1.35rem;
+    }
+
+    .glass {
+        position: static;
+        display: block;
+        width: 2.25rem;
+        height: 3.75rem;
+        margin-bottom: 0.5rem;
+        transform: rotate(8deg);
+    }
+
+    .glass:hover {
+        transform: rotate(-4deg);
+    }
+
+    .glass.cheers {
+        animation-name: clink-inline;
+    }
+
+    .unit {
+        font-size: 0.62rem;
+        letter-spacing: 0.1em;
+    }
+}
+
+@keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: none; }
+}
+
+@keyframes draw {
+    to { stroke-dashoffset: 0; }
+}
+
+@keyframes tick {
+    0% { transform: translateY(-0.12em); opacity: 0.4; }
+    100% { transform: none; opacity: 1; }
+}
+
+@keyframes fizz {
+    0% { transform: translateY(0); opacity: 0; }
+    20% { opacity: 1; }
+    100% { transform: translateY(-16px); opacity: 0; }
+}
+
+@keyframes float {
+    from { transform: translateY(0) translateX(0); }
+    50% { transform: translateY(-55vh) translateX(1.5rem); }
+    to { transform: translateY(-110vh) translateX(0); }
+}
+
+@keyframes clink {
+    0% { transform: translateY(-50%) rotate(8deg); }
+    35% { transform: translateY(-50%) rotate(-22deg); }
+    65% { transform: translateY(-50%) rotate(10deg); }
+    100% { transform: translateY(-50%) rotate(8deg); }
+}
+
+@keyframes flutter {
+    from { scale: 1 1; }
+    to { scale: 1 0.55; }
+}
+
+@keyframes glide {
+    from { translate: -10vw 0; }
+    50% { translate: 50vw -4vh; }
+    to { translate: 110vw 2vh; }
+}
+
+@keyframes clink-inline {
+    0% { transform: rotate(8deg); }
+    35% { transform: rotate(-22deg); }
+    65% { transform: rotate(10deg); }
+    100% { transform: rotate(8deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .flourish {
+        stroke-dashoffset: 0;
+    }
+
+    .sky span,
+    .bat {
+        display: none;
+    }
+}

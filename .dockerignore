@@ -1,0 +1,8 @@
+.git
+.github
+.devenv*
+.direnv
+nix
+result*
+birthday
+*.md

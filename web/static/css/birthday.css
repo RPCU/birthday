@@ -278,6 +278,86 @@ body {
     color: var(--rose);
 }
 
+/* Sealed card: the line stays on the server until the day. */
+.is-sealed .iou-body {
+    padding-right: 5.5rem;
+}
+
+.sealed-lines {
+    display: grid;
+    gap: 0.55rem;
+    margin: 0.35rem 0 0.9rem;
+}
+
+.sealed-lines span {
+    display: block;
+    height: 0.9rem;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--blush), var(--line) 40%, var(--blush) 80%);
+    background-size: 220% 100%;
+    opacity: 0.7;
+    filter: blur(1.5px);
+    animation: shimmer 3.2s ease-in-out infinite;
+}
+
+.sealed-lines span:first-child {
+    width: 88%;
+}
+
+.sealed-lines span:last-child {
+    width: 56%;
+    animation-delay: 0.4s;
+}
+
+.seal {
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    width: 3.75rem;
+    height: 3.75rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    transform: translateY(-50%) rotate(-8deg);
+    filter: drop-shadow(0 4px 6px rgba(59, 42, 63, 0.25));
+    -webkit-tap-highlight-color: transparent;
+}
+
+.seal:focus-visible {
+    outline: 2px solid var(--rose);
+    outline-offset: 4px;
+    border-radius: 50%;
+}
+
+.seal.nope {
+    animation: nope 0.5s ease-in-out;
+}
+
+.seal svg {
+    width: 100%;
+    height: 100%;
+}
+
+.seal-wax {
+    fill: var(--rose);
+}
+
+.seal-ring {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.35);
+    stroke-width: 1.5;
+}
+
+.seal-heart {
+    fill: rgba(255, 255, 255, 0.55);
+}
+
+/* The day itself: the line unveils. */
+.is-open .iou-line {
+    animation: unveil 1.4s 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
 /* Champagne glass: click for cheers */
 .glass {
     position: absolute;
@@ -475,6 +555,23 @@ body {
         animation-name: clink-inline;
     }
 
+    .is-sealed .iou-body {
+        padding-right: 1.25rem;
+    }
+
+    .seal {
+        position: static;
+        display: block;
+        width: 3rem;
+        height: 3rem;
+        margin-bottom: 0.5rem;
+        transform: rotate(-8deg);
+    }
+
+    .seal.nope {
+        animation-name: nope-inline;
+    }
+
     .unit {
         font-size: 0.62rem;
         letter-spacing: 0.1em;
@@ -523,6 +620,30 @@ body {
     from { translate: -10vw 0; }
     50% { translate: 50vw -4vh; }
     to { translate: 110vw 2vh; }
+}
+
+@keyframes shimmer {
+    from { background-position: 100% 0; }
+    to { background-position: -100% 0; }
+}
+
+@keyframes unveil {
+    from { opacity: 0; filter: blur(10px); letter-spacing: 0.08em; }
+    to { opacity: 1; filter: none; letter-spacing: normal; }
+}
+
+@keyframes nope {
+    0%, 100% { transform: translateY(-50%) rotate(-8deg); }
+    25% { transform: translateY(-50%) rotate(-18deg); }
+    50% { transform: translateY(-50%) rotate(2deg); }
+    75% { transform: translateY(-50%) rotate(-14deg); }
+}
+
+@keyframes nope-inline {
+    0%, 100% { transform: rotate(-8deg); }
+    25% { transform: rotate(-18deg); }
+    50% { transform: rotate(2deg); }
+    75% { transform: rotate(-14deg); }
 }
 
 @keyframes clink-inline {

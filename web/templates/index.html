@@ -6,7 +6,7 @@
     <title>{{if .Today}}Happy birthday, {{.Name}}!{{else}}{{.Name}}’s birthday · {{.DateLabel}}{{end}}</title>
     <meta name="description" content="Counting down to {{.Name}}’s birthday on {{.DateLabel}}.">
     <meta property="og:title" content="{{if .Today}}Happy birthday, {{.Name}}!{{else}}{{.Name}}’s birthday is coming{{end}}">
-    <meta property="og:description" content="{{.Message}}">
+    <meta property="og:description" content="{{if .Today}}{{.Message}}{{else}}A sealed note opens on {{.DateLabel}}.{{end}}">
     <meta name="theme-color" content="#fbf6ef" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#1d1720" media="(prefers-color-scheme: dark)">
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
@@ -65,7 +65,8 @@
         <p class="soon" id="summary" aria-live="polite">{{if eq .DaysLeft 1}}One more sleep!{{else}}{{.DaysLeft}} sleeps to go{{end}}</p>
         {{end}}
 
-        <article class="iou" aria-label="An I.O.U.">
+        {{if .Today}}
+        <article class="iou is-open" aria-label="An I.O.U.">
             <div class="iou-stub" aria-hidden="true"><span>I.O.U.</span></div>
             <div class="iou-body">
                 <button class="glass" type="button" aria-label="Cheers!">
@@ -78,10 +79,27 @@
                     </svg>
                 </button>
                 <p class="iou-line">{{.Message}}</p>
-                <p class="iou-meta">{{if .Today}}Redeemable today, and any day after{{else}}Redeemable from {{.DateLabel}} · never expires{{end}}</p>
+                <p class="iou-meta">Redeemable today, and any day after</p>
                 {{with .From}}<p class="iou-from">— {{.}}</p>{{end}}
             </div>
         </article>
+        {{else}}
+        <article class="iou is-sealed" aria-label="A sealed I.O.U., opening on {{.DateLabel}}">
+            <div class="iou-stub" aria-hidden="true"><span>I.O.U.</span></div>
+            <div class="iou-body">
+                <button class="seal" type="button" aria-label="Sealed until {{.DateLabel}}" data-days="{{.DaysLeft}}">
+                    <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+                        <path class="seal-wax" d="M32 3c5 0 7 4 11 5s9-1 11 3 0 8 2 12 6 6 5 11-6 6-7 10 1 9-3 11-8 0-12 2-6 6-11 6-7-4-11-5-9 1-11-3 0-8-2-12-6-6-5-11 6-6 7-10-1-9 3-11 8 0 12-2 6-6 11-6z"/>
+                        <circle class="seal-ring" cx="32" cy="32" r="17"/>
+                        <path class="seal-heart" d="M32 41s-9-5.6-9-11.4A4.9 4.9 0 0 1 32 27a4.9 4.9 0 0 1 9 2.6C41 35.4 32 41 32 41z"/>
+                    </svg>
+                </button>
+                <div class="sealed-lines" aria-hidden="true"><span></span><span></span></div>
+                <p class="iou-meta" aria-live="polite">Sealed until {{.DateLabel}} · opens when the countdown ends</p>
+                {{with .From}}<p class="iou-from">— {{.}}</p>{{end}}
+            </div>
+        </article>
+        {{end}}
     </main>
 
     <footer class="foot">Counting down in {{.TimeZone}}</footer>

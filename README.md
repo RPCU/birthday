@@ -1,9 +1,11 @@
 # 🎂 Birthday
 
 A little countdown to someone's birthday, hiding a surprise: an I.O.U. card
-(*"I owe you a birthday drink"* by default). Before the birthday there is no
-trace of it: the server leaves the card, its line and its signature out of
-the page, the link preview and the JSON feed. When the countdown ends the
+(*"I owe you a birthday drink"* by default). Before the birthday the page
+only teases it: a rattling gift box with *"A little something is waiting for
+you"* (`BIRTHDAY_TEASER`) that unlocks when the countdown ends. The server
+leaves the card, its line and its signature out of the page, the link preview
+and the JSON feed until then. When the countdown ends the
 page switches to a *Happy birthday* greeting with confetti and the card
 appears, its line unveiling. Click the champagne glass for a toast. The card
 stays for `BIRTHDAY_OPEN_DAYS` (15) days after the birthday while the
@@ -21,6 +23,7 @@ variables.
 | `BIRTHDAY_DATE`       | yes      |                              | `MM-DD`, or `YYYY-MM-DD` to also show the age they are turning.        |
 | `BIRTHDAY_MESSAGE`    | no       | `I owe you a birthday drink` | The line on the I.O.U. card, hidden until the birthday (max 280 characters). |
 | `BIRTHDAY_FROM`       | no       |                              | Signature under the line, hidden with it.                              |
+| `BIRTHDAY_TEASER`     | no       | `A little something is waiting for you` | Teaser shown in the card's place before it unlocks (max 140 characters). |
 | `BIRTHDAY_OPEN_DAYS`  | no       | `15`                         | Days the I.O.U. stays visible after the birthday (0–365).              |
 | `BIRTHDAY_TIMEZONE`   | no       | `UTC`                        | IANA zone used for midnight, e.g. `Europe/Paris`.                      |
 | `BIRTHDAY_HALLOWEEN`  | no       | `true`                       | Subtle seasonal touches: a crescent moon, two bats and a corner cobweb. |

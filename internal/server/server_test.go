@@ -25,6 +25,7 @@ func newTestServer(t *testing.T, now time.Time, name string) http.Handler {
 		Message:   config.DefaultMessage,
 		From:      "Victor",
 		Birthday:  countdown.Birthday{Year: 1996, Month: time.July, Day: 20},
+		Teaser:    config.DefaultTeaser,
 		Location:  paris,
 		OpenDays:  config.DefaultOpenDays,
 		Halloween: true,
@@ -51,7 +52,7 @@ func TestIndexCountingDown(t *testing.T) {
 		t.Fatalf("status = %d", rec.Code)
 	}
 	body := rec.Body.String()
-	for _, want := range []string{"Chihiro", "July 20", "turning 30", "10 sleeps to go"} {
+	for _, want := range []string{"Chihiro", "July 20", "turning 30", "10 sleeps to go", config.DefaultTeaser, "Unlocks when the countdown ends · in 10 sleeps"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("page does not contain %q", want)
 		}
@@ -77,6 +78,9 @@ func TestIndexOnTheDay(t *testing.T) {
 	}
 	if !strings.Contains(body, config.DefaultMessage) {
 		t.Error("the I.O.U. line is not revealed on the day")
+	}
+	if strings.Contains(body, config.DefaultTeaser) {
+		t.Error("the teaser is still shown once unlocked")
 	}
 }
 

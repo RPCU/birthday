@@ -53,6 +53,9 @@ Use `devenv shell -- <cmd>`, which provides Go, gofumpt, golines and air.
   default 15), and the template renders the card, its signature and the
   `og:description` only then. Never send any of it to the client earlier, not
   in HTML, JSON, meta tags or `data-*` attributes; tests assert this.
+- Before it unlocks, a teaser (`BIRTHDAY_TEASER`, gift box) stands in for
+  the card. It must stay generic: never derive it from the message or the
+  signature.
 - CSS/JS URLs carry `?v=<content hash>` (`fingerprint` in the server) so a
   deploy never pairs new HTML with stale cached assets. Keep any new asset
   linked from the template in that fingerprint.

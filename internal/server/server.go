@@ -93,6 +93,7 @@ type moment struct {
 	// Now lets the browser correct for a skewed local clock.
 	Now time.Time `json:"now"`
 
+	Teaser       string `json:"-"`
 	DaysLeft     int    `json:"-"`
 	Halloween    bool   `json:"-"`
 	DateLabel    string `json:"-"`
@@ -121,6 +122,7 @@ func (s *Server) moment() moment {
 		Today:        st.Today,
 		Turning:      st.Turning,
 		Now:          now,
+		Teaser:       s.cfg.Teaser,
 		DaysLeft:     st.DaysUntil(now),
 		Halloween:    s.cfg.Halloween,
 		DateLabel:    st.Start.Format("January 2"),

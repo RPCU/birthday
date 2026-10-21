@@ -11,6 +11,8 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/Banh-Canh/birthday/internal/config"
@@ -53,6 +55,13 @@ func New(cfg config.Config, log *slog.Logger) (*Server, error) {
 	return &Server{cfg: cfg, log: log, page: page, static: static, assetVersion: version, now: time.Now}, nil
 }
 
+// isLink reports whether the secret is a single web link, so the page can
+// offer to open it.
+func isLink(s string) bool {
+	u, err := url.Parse(s)
+	return err == nil && (u.Scheme == "https" || u.Scheme == "http") && u.Host != "" && !strings.ContainsAny(s, " \n")
+}
+
 // fingerprint returns a short content hash of the named files.
 func fingerprint(fsys fs.FS, names ...string) (string, error) {
 	h := sha256.New()
@@ -93,7 +102,12 @@ type moment struct {
 	// Now lets the browser correct for a skewed local clock.
 	Now time.Time `json:"now"`
 
-	Teaser       string `json:"-"`
+	Teaser string `json:"-"`
+	// Secret is set only while Open. It is rendered in the page, never in
+	// the JSON feed.
+	Secret       string `json:"-"`
+	SecretURL    bool   `json:"-"`
+	SecretIntro  string `json:"-"`
 	DaysLeft     int    `json:"-"`
 	Halloween    bool   `json:"-"`
 	DateLabel    string `json:"-"`
@@ -106,9 +120,9 @@ func (s *Server) moment() moment {
 	now := s.now().In(s.cfg.Location)
 	st := s.cfg.Birthday.At(now)
 	open, until := s.cfg.Birthday.Reveal(now, s.cfg.OpenDays)
-	var message, from, lastOpenDay string
+	var message, from, secret, lastOpenDay string
 	if open {
-		message, from = s.cfg.Message, s.cfg.From
+		message, from, secret = s.cfg.Message, s.cfg.From, s.cfg.Secret
 		lastOpenDay = until.AddDate(0, 0, -1).Format("January 2")
 	}
 	return moment{
@@ -123,6 +137,9 @@ func (s *Server) moment() moment {
 		Turning:      st.Turning,
 		Now:          now,
 		Teaser:       s.cfg.Teaser,
+		Secret:       secret,
+		SecretURL:    isLink(secret),
+		SecretIntro:  s.cfg.SecretIntro,
 		DaysLeft:     st.DaysUntil(now),
 		Halloween:    s.cfg.Halloween,
 		DateLabel:    st.Start.Format("January 2"),

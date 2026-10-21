@@ -30,6 +30,9 @@ func TestLoadDefaults(t *testing.T) {
 	if !cfg.Halloween {
 		t.Error("Halloween = false, want on by default")
 	}
+	if cfg.Secret != "" || cfg.SecretIntro != DefaultSecretIntro {
+		t.Errorf("Secret = %q, SecretIntro = %q, want none and the default intro", cfg.Secret, cfg.SecretIntro)
+	}
 	if cfg.Teaser != DefaultTeaser {
 		t.Errorf("Teaser = %q, want default", cfg.Teaser)
 	}
@@ -55,6 +58,7 @@ func TestLoadCustom(t *testing.T) {
 		"BIRTHDAY_HALLOWEEN": "false",
 		"BIRTHDAY_OPEN_DAYS": "3",
 		"BIRTHDAY_TEASER":    "Guess what?",
+		"BIRTHDAY_SECRET":    " UBER-1234-ABCD ",
 	}))
 	if err != nil {
 		t.Fatalf("Load() error = %v", err)
@@ -64,6 +68,9 @@ func TestLoadCustom(t *testing.T) {
 	}
 	if cfg.Halloween {
 		t.Error("Halloween = true, want false")
+	}
+	if cfg.Secret != "UBER-1234-ABCD" {
+		t.Errorf("Secret = %q, want it trimmed", cfg.Secret)
 	}
 	if cfg.Teaser != "Guess what?" {
 		t.Errorf("Teaser = %q", cfg.Teaser)

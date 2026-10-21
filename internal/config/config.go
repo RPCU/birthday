@@ -20,6 +20,10 @@ const DefaultMessage = "I owe you a birthday drink"
 // BIRTHDAY_TEASER is unset.
 const DefaultTeaser = "A little something is waiting for you"
 
+// DefaultSecretIntro announces BIRTHDAY_SECRET when BIRTHDAY_SECRET_INTRO is
+// unset.
+const DefaultSecretIntro = "And a little extra, just for you"
+
 // DefaultOpenDays is how long the I.O.U. stays visible after the birthday
 // when BIRTHDAY_OPEN_DAYS is unset.
 const DefaultOpenDays = 15
@@ -28,6 +32,7 @@ const (
 	maxNameLen    = 64
 	maxMessageLen = 280
 	maxTeaserLen  = 140
+	maxSecretLen  = 500
 )
 
 // Config is the validated application configuration.
@@ -42,6 +47,12 @@ type Config struct {
 	Message string
 	From    string
 	Teaser  string
+
+	// Secret is an optional extra revealed with the I.O.U. (e.g. a gift card
+	// code or link), meant to come from a secret store; SecretIntro is the
+	// line announcing it.
+	Secret      string
+	SecretIntro string
 
 	Birthday countdown.Birthday
 	Location *time.Location
@@ -63,6 +74,9 @@ func Load(getenv func(string) string) (Config, error) {
 		Message: valueOr(strings.TrimSpace(getenv("BIRTHDAY_MESSAGE")), DefaultMessage),
 		From:    strings.TrimSpace(getenv("BIRTHDAY_FROM")),
 		Teaser:  valueOr(strings.TrimSpace(getenv("BIRTHDAY_TEASER")), DefaultTeaser),
+
+		Secret:      strings.TrimSpace(getenv("BIRTHDAY_SECRET")),
+		SecretIntro: valueOr(strings.TrimSpace(getenv("BIRTHDAY_SECRET_INTRO")), DefaultSecretIntro),
 	}
 
 	var errs []error
@@ -77,6 +91,12 @@ func Load(getenv func(string) string) (Config, error) {
 	}
 	if utf8.RuneCountInString(cfg.Message) > maxMessageLen {
 		errs = append(errs, fmt.Errorf("BIRTHDAY_MESSAGE: at most %d characters", maxMessageLen))
+	}
+	if utf8.RuneCountInString(cfg.Secret) > maxSecretLen {
+		errs = append(errs, fmt.Errorf("BIRTHDAY_SECRET: at most %d characters", maxSecretLen))
+	}
+	if utf8.RuneCountInString(cfg.SecretIntro) > maxTeaserLen {
+		errs = append(errs, fmt.Errorf("BIRTHDAY_SECRET_INTRO: at most %d characters", maxTeaserLen))
 	}
 	if utf8.RuneCountInString(cfg.Teaser) > maxTeaserLen {
 		errs = append(errs, fmt.Errorf("BIRTHDAY_TEASER: at most %d characters", maxTeaserLen))

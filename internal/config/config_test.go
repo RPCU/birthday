@@ -30,6 +30,9 @@ func TestLoadDefaults(t *testing.T) {
 	if !cfg.Halloween {
 		t.Error("Halloween = false, want on by default")
 	}
+	if cfg.Teaser != DefaultTeaser {
+		t.Errorf("Teaser = %q, want default", cfg.Teaser)
+	}
 	if cfg.OpenDays != DefaultOpenDays {
 		t.Errorf("OpenDays = %d, want %d", cfg.OpenDays, DefaultOpenDays)
 	}
@@ -51,6 +54,7 @@ func TestLoadCustom(t *testing.T) {
 		"BIRTHDAY_PORT":      "9000",
 		"BIRTHDAY_HALLOWEEN": "false",
 		"BIRTHDAY_OPEN_DAYS": "3",
+		"BIRTHDAY_TEASER":    "Guess what?",
 	}))
 	if err != nil {
 		t.Fatalf("Load() error = %v", err)
@@ -60,6 +64,9 @@ func TestLoadCustom(t *testing.T) {
 	}
 	if cfg.Halloween {
 		t.Error("Halloween = true, want false")
+	}
+	if cfg.Teaser != "Guess what?" {
+		t.Errorf("Teaser = %q", cfg.Teaser)
 	}
 	if cfg.OpenDays != 3 {
 		t.Errorf("OpenDays = %d, want 3", cfg.OpenDays)

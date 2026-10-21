@@ -16,6 +16,10 @@ import (
 // DefaultMessage is the line shown when BIRTHDAY_MESSAGE is unset.
 const DefaultMessage = "I owe you a birthday drink"
 
+// DefaultTeaser hints at the hidden I.O.U. before the birthday when
+// BIRTHDAY_TEASER is unset.
+const DefaultTeaser = "A little something is waiting for you"
+
 // DefaultOpenDays is how long the I.O.U. stays visible after the birthday
 // when BIRTHDAY_OPEN_DAYS is unset.
 const DefaultOpenDays = 15
@@ -23,6 +27,7 @@ const DefaultOpenDays = 15
 const (
 	maxNameLen    = 64
 	maxMessageLen = 280
+	maxTeaserLen  = 140
 )
 
 // Config is the validated application configuration.
@@ -31,10 +36,12 @@ type Config struct {
 	Port string
 
 	// Name is who the countdown is for, Message the line printed on the
-	// I.O.U. card, From an optional signature under it.
+	// I.O.U. card, From an optional signature under it. Teaser is shown in
+	// the card's place until it unlocks.
 	Name    string
 	Message string
 	From    string
+	Teaser  string
 
 	Birthday countdown.Birthday
 	Location *time.Location
@@ -55,6 +62,7 @@ func Load(getenv func(string) string) (Config, error) {
 		Name:    strings.TrimSpace(getenv("BIRTHDAY_NAME")),
 		Message: valueOr(strings.TrimSpace(getenv("BIRTHDAY_MESSAGE")), DefaultMessage),
 		From:    strings.TrimSpace(getenv("BIRTHDAY_FROM")),
+		Teaser:  valueOr(strings.TrimSpace(getenv("BIRTHDAY_TEASER")), DefaultTeaser),
 	}
 
 	var errs []error
@@ -69,6 +77,9 @@ func Load(getenv func(string) string) (Config, error) {
 	}
 	if utf8.RuneCountInString(cfg.Message) > maxMessageLen {
 		errs = append(errs, fmt.Errorf("BIRTHDAY_MESSAGE: at most %d characters", maxMessageLen))
+	}
+	if utf8.RuneCountInString(cfg.Teaser) > maxTeaserLen {
+		errs = append(errs, fmt.Errorf("BIRTHDAY_TEASER: at most %d characters", maxTeaserLen))
 	}
 	if utf8.RuneCountInString(cfg.From) > maxNameLen {
 		errs = append(errs, fmt.Errorf("BIRTHDAY_FROM: at most %d characters", maxNameLen))

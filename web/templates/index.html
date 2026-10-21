@@ -85,6 +85,20 @@
                 {{with .From}}<p class="iou-from">— {{.}}</p>{{end}}
             </div>
         </article>
+        {{else}}
+        <aside class="tease" aria-label="Something locked until the countdown ends">
+            <svg class="gift" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+                <path class="gift-bow" d="M32 17c-3-7-13-11-15-6s7 7 15 6zM32 17c3-7 13-11 15-6s-7 7-15 6z"/>
+                <rect class="gift-box" x="13" y="30" width="38" height="26" rx="3"/>
+                <rect class="gift-lid" x="10" y="20" width="44" height="11" rx="3"/>
+                <path class="gift-ribbon" d="M29 20h6v36h-6z"/>
+                <circle class="gift-knot" cx="32" cy="17.5" r="3"/>
+            </svg>
+            <div class="tease-text">
+                <p class="tease-line">{{.Teaser}}</p>
+                <p class="iou-meta">Unlocks when the countdown ends{{if eq .DaysLeft 1}} · tomorrow{{else}} · in {{.DaysLeft}} sleeps{{end}}</p>
+            </div>
+        </aside>
         {{end}}
     </main>
 

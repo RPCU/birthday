@@ -46,7 +46,7 @@ const DefaultChatModel = "sonnet"
 const DefaultChatCommand = "claude"
 
 // DefaultChatBeforePIN is how many messages the birthday person sends the
-// chat friend before the secret's PIN can be entered, when
+// chat friend before the secret shows, when
 // BIRTHDAY_CHAT_BEFORE_PIN is unset.
 const DefaultChatBeforePIN = 5
 
@@ -136,9 +136,9 @@ type Config struct {
 	// page. Empty when BIRTHDAY_CHAT_NOTES is false.
 	ChatNotesPath string
 	// ChatBeforePIN is how many messages the birthday person must send the
-	// chat friend before the secret's PIN can be entered (0: right away). It
-	// applies with the chat, a secret and its PIN; the chat then opens
-	// without the PIN. ChatTalkedPath keeps the count next to the login.
+	// chat friend, once the PIN opened the chat, before the secret shows (0:
+	// the PIN shows it right away). It applies with the chat, a secret and
+	// its PIN. ChatTalkedPath keeps the count next to the login.
 	ChatBeforePIN  int
 	ChatTalkedPath string
 	// ChatFallback holds the friend's canned replies, used in turn when

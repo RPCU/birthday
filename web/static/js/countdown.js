@@ -207,11 +207,13 @@
             body: JSON.stringify(body),
         });
 
-    // The secret's PIN can wait for a few messages to the chat friend: a
-    // pumpkin ripens with each one, with a hint along the way, and the PIN
-    // form shows once it's ripe. The server keeps the count.
+    // The secret can wait for a few messages to the chat friend: the PIN
+    // opens the chat, a pumpkin ripens with each message, with a hint along
+    // the way, and the secret shows once it's ripe. The server keeps the
+    // count.
     const grow = document.querySelector(".grow");
     let grew = () => {};
+    let ripe = () => {};
     if (grow) {
         const total = Number(grow.dataset.total);
         let left = Number(grow.dataset.left);
@@ -220,7 +222,7 @@
         const steps = grow.querySelector(".grow-steps");
         const hint = grow.querySelector(".grow-hint");
         const hints = [
-            `Say hi to ${friend} 👋 Every message helps this little pumpkin grow, and your PIN is waiting inside.`,
+            `Say hi to ${friend} 👋 Every message helps this little pumpkin grow, and your surprise is waiting inside.`,
             `It's sprouting! Tell ${friend} how your day is going.`,
             `${friend} would love to hear about your favourite things: flowers, music, food…`,
             `Getting round! Ask ${friend} anything, or share what made you smile today.`,
@@ -232,7 +234,7 @@
             grow.style.setProperty("--ripe", String(done / total));
             [...steps.children].forEach((li, i) => li.classList.toggle("is-done", i < done));
             grow.classList.toggle("is-ripe", left === 0);
-            if (left === 0) hint.textContent = "Ripe! 🎃 Your PIN can open the surprise now.";
+            if (left === 0) hint.textContent = "Ripe! 🎃 Opening your surprise…";
             else if (left === 1) hint.textContent = "Nearly ripe… one more message and it's ready 🎃";
             else hint.textContent = hints[Math.min(done, hints.length - 1)];
         };
@@ -248,8 +250,7 @@
             if (left > 0) return;
             const r = pumpkin.getBoundingClientRect();
             burst(r.left + r.width / 2, r.top, 50, 1.4);
-            const pinForm = grow.parentElement.querySelector(".extra-pin");
-            if (pinForm) pinForm.hidden = false;
+            ripe();
         };
     }
 
@@ -425,36 +426,67 @@
         });
     }
 
+    // Shows the secret the server handed over in place of el, already
+    // revealed.
+    async function showSecret(el, res) {
+        const { secret, link } = await res.json();
+        const code = document.createElement("button");
+        code.type = "button";
+        code.className = "extra-code";
+        code.setAttribute("aria-label", "Copy the surprise");
+        const value = document.createElement("span");
+        value.className = "extra-value";
+        value.textContent = secret;
+        code.append(value);
+        el.replaceWith(code);
+        if (link) {
+            const a = document.createElement("a");
+            a.className = "extra-open";
+            a.href = secret;
+            a.target = "_blank";
+            a.rel = "noopener noreferrer";
+            a.textContent = "Open";
+            code.after(a);
+        }
+        wireExtra(code);
+        const r = code.getBoundingClientRect();
+        burst(r.left + r.width / 2, r.top, 60, 1.4);
+    }
+
     // PIN-guarded extra: the server only hands the secret over for the right
-    // PIN, then it is shown already revealed. The same PIN unlocks the chat.
+    // PIN. The same PIN unlocks the chat.
     const pinForm = document.querySelector(".extra-pin:not(.chat-pin)");
-    if (pinForm) {
+    if (pinForm && pinForm.dataset.then === "chat") {
+        // The PIN opens the chat first, and the secret comes once the
+        // pumpkin is ripe, with the same PIN.
+        wirePin(
+            pinForm,
+            (pin) => post("/api/chat", { pin, messages: [] }),
+            (pin) => {
+                unlockChat(pin);
+                pinForm.remove();
+                grow.hidden = false;
+                chat.querySelector(".chat-form textarea").focus();
+            },
+        );
+        ripe = async () => {
+            try {
+                const res = await post("/api/reveal", { pin: chatPIN });
+                if (res.ok) {
+                    await showSecret(grow, res);
+                    return;
+                }
+            } catch {
+                // Below.
+            }
+            grow.querySelector(".grow-hint").textContent = "Ripe! 🎃 Reload the page and enter your PIN to open your surprise.";
+        };
+    } else if (pinForm) {
         wirePin(
             pinForm,
             (pin) => post("/api/reveal", { pin }),
             async (pin, res) => {
-                const { secret, link } = await res.json();
-                const code = document.createElement("button");
-                code.type = "button";
-                code.className = "extra-code";
-                code.setAttribute("aria-label", "Copy the surprise");
-                const value = document.createElement("span");
-                value.className = "extra-value";
-                value.textContent = secret;
-                code.append(value);
-                pinForm.replaceWith(code);
-                if (link) {
-                    const a = document.createElement("a");
-                    a.className = "extra-open";
-                    a.href = secret;
-                    a.target = "_blank";
-                    a.rel = "noopener noreferrer";
-                    a.textContent = "Open";
-                    code.after(a);
-                }
-                wireExtra(code);
-                const r = code.getBoundingClientRect();
-                burst(r.left + r.width / 2, r.top, 60, 1.4);
+                await showSecret(pinForm, res);
                 unlockChat(pin);
             },
         );

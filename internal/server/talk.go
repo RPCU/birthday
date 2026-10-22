@@ -7,19 +7,14 @@ import (
 	"strings"
 )
 
-// pinAfterChat reports whether the secret's PIN waits for a few messages to
-// the chat friend (cfg.ChatBeforePIN). The chat is then the way in, so it
-// opens without the PIN.
+// pinAfterChat reports whether the secret waits for a few messages to the
+// chat friend (cfg.ChatBeforePIN): the PIN opens the chat first, and the
+// secret only once they've talked.
 func (s *Server) pinAfterChat() bool {
 	return s.cfg.Chat && s.cfg.ChatBeforePIN > 0 && s.cfg.SecretPIN != "" && s.cfg.Secret != ""
 }
 
-// chatNeedsPIN reports whether the chat is locked behind the PIN.
-func (s *Server) chatNeedsPIN() bool {
-	return s.cfg.SecretPIN != "" && !s.pinAfterChat()
-}
-
-// messagesLeft is how many more messages the PIN waits for.
+// messagesLeft is how many more messages the secret waits for.
 func (s *Server) messagesLeft() int {
 	s.talkMu.Lock()
 	defer s.talkMu.Unlock()

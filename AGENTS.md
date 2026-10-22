@@ -86,11 +86,11 @@ Use `devenv shell -- <cmd>`, which provides Go, gofumpt, golines and air.
   for the page's owner: never cleared, never served. The persona gets to
   know them without prying (one light question at a time, nothing private)
   and admits the owner can read the chat if asked; keep it that way.
-  With `BIRTHDAY_CHAT_BEFORE_PIN` (`talk.go`), the secret's PIN waits for
-  that many messages to the friend: the chat then skips the PIN
-  (`chatNeedsPIN`), `/api/reveal` answers 409 until the count
+  With `BIRTHDAY_CHAT_BEFORE_PIN` (`talk.go`), the PIN opens the chat (it
+  stays behind the PIN) and the secret waits for that many messages to the
+  friend: `/api/reveal` answers 409 until the count
   (`$CLAUDE_CONFIG_DIR/birthday-talked`, never reset) is reached, and the
-  page grows a pumpkin with hints in place of the PIN form.
+  page grows a pumpkin with hints, then reveals with the same PIN.
 - Before it unlocks, a teaser (`BIRTHDAY_TEASER`, gift box) stands in for
   the card. It must stay generic: never derive it from the message or the
   signature.

@@ -164,7 +164,7 @@ type moment struct {
 	SecretIntro  string `json:"-"`
 	// Chat is set only while Open and the chat is on; ChatLocked means it
 	// needs the PIN first. SecretWaits is how many more messages to the
-	// friend the secret's PIN waits for, out of ChatBeforePIN.
+	// friend the secret waits for after the PIN, out of ChatBeforePIN.
 	Chat        bool   `json:"-"`
 	ChatLocked  bool   `json:"-"`
 	ChatName    string `json:"-"`
@@ -224,7 +224,7 @@ func (s *Server) moment() moment {
 		SecretLocked: locked,
 		SecretIntro:  s.cfg.SecretIntro,
 		Chat:         chat,
-		ChatLocked:   chat && s.chatNeedsPIN(),
+		ChatLocked:   chat && s.cfg.SecretPIN != "",
 		ChatName:     s.cfg.ChatName,
 		ChatInitial:  initial(s.cfg.ChatName),
 		SecretWaits:  waits,

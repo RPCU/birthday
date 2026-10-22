@@ -79,7 +79,7 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 		writeJSONError(w, http.StatusBadRequest, "bad request")
 		return
 	}
-	if s.chatNeedsPIN() {
+	if s.cfg.SecretPIN != "" {
 		// Wrong PINs here drain the same bucket as /api/reveal.
 		if !s.pinTries.ready(s.now()) {
 			w.Header().Set("Retry-After", strconv.Itoa(60/pinPerMinute))

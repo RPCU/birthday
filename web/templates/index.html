@@ -135,7 +135,7 @@
                 {{end}}
                 {{if .SecretLocked}}
                 <div class="extra">
-                    <p class="extra-intro">{{.SecretIntro}}</p>
+                    {{if not .SecretWaits}}<p class="extra-intro">{{.SecretIntro}}</p>{{end}}
                     {{if .SecretWaits}}
                     <div class="grow" data-left="{{.SecretWaits}}" data-total="{{.ChatBefore}}" data-friend="{{.ChatName}}" hidden>
                         <svg class="grow-pumpkin" viewBox="0 0 64 64" aria-hidden="true" focusable="false">

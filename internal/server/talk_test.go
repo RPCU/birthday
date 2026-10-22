@@ -16,6 +16,7 @@ func withChatBeforePIN(path string) func(*config.Config) {
 		c.ChatBeforePIN = 3
 		c.ChatTalkedPath = path
 		c.ChatCountReset = true
+		c.SecretIntro = "And a ride to get there"
 	}
 }
 
@@ -58,6 +59,9 @@ func TestPINWaitsForTheChat(t *testing.T) {
 			t.Errorf("page lacks %q", want)
 		}
 	}
+	if strings.Contains(page, "a ride") {
+		t.Error("the intro shows before the pumpkin is ripe")
+	}
 
 	// The chat is still behind the PIN.
 	if rec := postChat(t, h, `{"messages":[{"from":"me","text":"hi"}]}`); rec.Code != http.StatusForbidden {
@@ -71,8 +75,8 @@ func TestPINWaitsForTheChat(t *testing.T) {
 			t.Fatalf("chat: status %d", rec.Code)
 		}
 	}
-	if rec := reveal(t, h, `{"pin":"482916"}`); rec.Code != http.StatusOK {
-		t.Errorf("reveal after 3 messages: status %d", rec.Code)
+	if rec := reveal(t, h, `{"pin":"482916"}`); rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"intro":"And a ride to get there"`) {
+		t.Errorf("reveal after 3 messages: status %d, %s", rec.Code, rec.Body)
 	}
 	// The reveal spent the count, on every replica sharing the volume.
 	if rec := reveal(t, h, `{"pin":"482916"}`); rec.Code != http.StatusConflict {

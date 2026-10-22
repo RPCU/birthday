@@ -46,6 +46,7 @@ func newServer(t *testing.T, now time.Time, name string, tweak func(*config.Conf
 		t.Fatal(err)
 	}
 	s.now = func() time.Time { return now }
+	s.typing = 0
 	return s
 }
 

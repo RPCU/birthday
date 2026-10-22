@@ -34,6 +34,7 @@ which the image ships.
 | `BIRTHDAY_CHAT`       | no       | `false`                      | Adds a chat with a cheerful friend to the opened card, above the secret (see [Chat friend](#chat-friend)). |
 | `BIRTHDAY_CHAT_NAME`  | no       | `Sunny`                      | The friend's name (max 64 characters).                                 |
 | `BIRTHDAY_CHAT_PROMPT` | no      |                              | More instructions on how the friend acts, added to the built-in cheerful persona (max 8000 characters). |
+| `BIRTHDAY_CHAT_FALLBACK` | no    | six cheerful birthday lines  | What the friend says, one line per reply in turn, when Claude can't answer; `{name}` becomes `BIRTHDAY_NAME` (one per line, max 50 lines of 280 characters). |
 | `BIRTHDAY_CHAT_MODEL` | no       | `sonnet`                     | Claude model (`sonnet`, `opus`, `haiku` or a full model ID).           |
 | `BIRTHDAY_CHAT_COMMAND` | no     | `claude`                     | The Claude Code CLI.                                                   |
 | `BIRTHDAY_HOST`       | no       | all interfaces               | Listen address.                                                        |
@@ -78,8 +79,10 @@ kubectl exec -it <pod> -- claude auth login
 That login lasts as long as the container (mount a volume on
 `/home/birthday/.claude` to keep it) and covers that one replica. For
 something that survives restarts, set `CLAUDE_CODE_OAUTH_TOKEN` (from
-`claude setup-token`) from a secret instead. Until it's signed in, the friend
-"stepped away" and the server logs a warning. Each reply runs a Claude Code
+`claude setup-token`) from a secret instead. Until it's signed in (or when
+Claude Code is missing or out of usage), the friend still answers, with the
+`BIRTHDAY_CHAT_FALLBACK` lines in turn after a short "typing" pause, and the
+server logs a warning; Claude is tried again a minute later. Each reply runs a Claude Code
 process of about 250 MiB, two at most at once: give the container ~640 MiB.
 
 ## Endpoints

@@ -5,6 +5,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -43,6 +44,18 @@ const DefaultChatModel = "sonnet"
 // unset.
 const DefaultChatCommand = "claude"
 
+// DefaultChatFallback is what the chat friend says, in turn, when Claude
+// can't answer (not signed in, usage limits…) and BIRTHDAY_CHAT_FALLBACK is
+// unset. {name} becomes BIRTHDAY_NAME.
+var DefaultChatFallback = []string{
+	"Aww, {name}! 🥳 Today is all about you. I hope it's full of laughter, cake and the people you love!",
+	"You deserve the happiest of birthdays, truly. 💛 Never forget how loved you are!",
+	"Hehe, I'm grinning just reading that! 😄 Here's to another year of you being wonderful. 🥂",
+	"Make a wish, {name}! 🌟 I have a feeling this year is going to be a great one for you.",
+	"Sending you the biggest birthday hug from here 🤗🎂",
+	"Honestly, the world is lucky to have you. Happy birthday, {name}! 🎉",
+}
+
 // DefaultOpenDays is how long the I.O.U. stays visible after the birthday
 // when BIRTHDAY_OPEN_DAYS is unset.
 const DefaultOpenDays = 15
@@ -55,6 +68,7 @@ const (
 	minPINLen     = 4
 	maxPINLen     = 12
 	maxPromptLen  = 8000
+	maxFallbacks  = 50
 )
 
 // Config is the validated application configuration.
@@ -101,6 +115,9 @@ type Config struct {
 	ChatPrompt  string
 	ChatModel   string
 	ChatCommand string
+	// ChatFallback holds the friend's canned replies, used in turn when
+	// Claude can't answer.
+	ChatFallback []string
 }
 
 // Load builds the configuration from getenv (os.Getenv in production) and
@@ -159,6 +176,19 @@ func Load(getenv func(string) string) (Config, error) {
 	}
 	if utf8.RuneCountInString(cfg.ChatName) > maxNameLen {
 		errs = append(errs, fmt.Errorf("BIRTHDAY_CHAT_NAME: at most %d characters", maxNameLen))
+	}
+	cfg.ChatFallback = DefaultChatFallback
+	if v := strings.TrimSpace(getenv("BIRTHDAY_CHAT_FALLBACK")); v != "" {
+		cfg.ChatFallback = nil
+		for line := range strings.Lines(v) {
+			if line = strings.TrimSpace(line); line != "" {
+				cfg.ChatFallback = append(cfg.ChatFallback, line)
+			}
+		}
+		tooLong := func(l string) bool { return utf8.RuneCountInString(l) > maxMessageLen }
+		if len(cfg.ChatFallback) > maxFallbacks || slices.ContainsFunc(cfg.ChatFallback, tooLong) {
+			errs = append(errs, fmt.Errorf("BIRTHDAY_CHAT_FALLBACK: at most %d lines of %d characters", maxFallbacks, maxMessageLen))
+		}
 	}
 	if utf8.RuneCountInString(cfg.ChatPrompt) > maxPromptLen {
 		errs = append(errs, fmt.Errorf("BIRTHDAY_CHAT_PROMPT: at most %d characters", maxPromptLen))

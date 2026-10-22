@@ -137,7 +137,7 @@
                 <div class="extra">
                     <p class="extra-intro">{{.SecretIntro}}</p>
                     {{if .SecretWaits}}
-                    <div class="grow" data-left="{{.SecretWaits}}" data-total="{{.ChatBefore}}" data-friend="{{.ChatName}}">
+                    <div class="grow" data-left="{{.SecretWaits}}" data-total="{{.ChatBefore}}" data-friend="{{.ChatName}}" hidden>
                         <svg class="grow-pumpkin" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
                             <path class="grow-leaf" d="M35 15c3-6 10-8 15-5-3 5-9 7-15 5z"/>
                             <g class="grow-body">
@@ -149,15 +149,15 @@
                         </svg>
                         <div class="grow-text">
                             <ol class="grow-steps" aria-hidden="true"></ol>
-                            <p class="grow-hint" aria-live="polite">Chat with {{.ChatName}} to grow the pumpkin: {{.SecretWaits}} more {{if eq .SecretWaits 1}}message{{else}}messages{{end}} until your PIN.</p>
+                            <p class="grow-hint" aria-live="polite">Chat with {{.ChatName}} to grow the pumpkin: {{.SecretWaits}} more {{if eq .SecretWaits 1}}message{{else}}messages{{end}} until your surprise.</p>
                         </div>
                     </div>
                     {{end}}
-                    <form class="extra-pin" novalidate{{if .SecretWaits}} hidden{{end}}>
-                        <label class="extra-pin-label" for="pin">Enter your PIN to reveal it</label>
+                    <form class="extra-pin" novalidate{{if .SecretWaits}} data-then="chat"{{end}}>
+                        <label class="extra-pin-label" for="pin">{{if .SecretWaits}}Enter your PIN to chat with {{.ChatName}}{{else}}Enter your PIN to reveal it{{end}}</label>
                         <div class="extra-pin-row">
                             <input id="pin" name="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="12" required>
-                            <button type="submit">Reveal</button>
+                            <button type="submit">{{if .SecretWaits}}Unlock{{else}}Reveal{{end}}</button>
                         </div>
                         <p class="extra-pin-msg" aria-live="polite"></p>
                     </form>

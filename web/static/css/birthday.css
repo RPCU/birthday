@@ -1115,7 +1115,7 @@ g:nth-of-type(3n) > .pennant {
     gap: 0.9rem;
 }
 
-.extra-pin[hidden] {
+.grow[hidden] {
     display: none;
 }
 

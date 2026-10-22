@@ -26,29 +26,35 @@ func TestPINWaitsForTheChat(t *testing.T) {
 	h := s.Handler()
 
 	page := get(t, h, "/").Body.String()
-	for _, want := range []string{`class="grow" data-left="3" data-total="3"`, `<form class="extra-pin" novalidate hidden>`, "3 more messages"} {
+	for _, want := range []string{
+		`class="grow" data-left="3" data-total="3" data-friend="Sunny" hidden`,
+		`<form class="extra-pin" novalidate data-then="chat">`,
+		"Enter your PIN to chat with Sunny",
+		"chat is-locked",
+		"3 more messages",
+	} {
 		if !strings.Contains(page, want) {
 			t.Errorf("page lacks %q", want)
 		}
 	}
-	if strings.Contains(page, "chat-pin") || strings.Contains(page, "is-locked") {
-		t.Error("the chat is still behind the PIN")
-	}
 
+	// The chat is still behind the PIN.
+	if rec := postChat(t, h, `{"messages":[{"from":"me","text":"hi"}]}`); rec.Code != http.StatusForbidden {
+		t.Fatalf("chat without the PIN: status %d", rec.Code)
+	}
 	for i := range 3 {
 		if rec := reveal(t, h, `{"pin":"482916"}`); rec.Code != http.StatusConflict {
 			t.Fatalf("reveal after %d messages: status %d, want 409", i, rec.Code)
 		}
-		// No PIN: the chat is the way in.
-		if rec := postChat(t, h, `{"messages":[{"from":"me","text":"hi"}]}`); rec.Code != http.StatusOK {
+		if rec := postChat(t, h, `{"pin":"482916","messages":[{"from":"me","text":"hi"}]}`); rec.Code != http.StatusOK {
 			t.Fatalf("chat: status %d", rec.Code)
 		}
 	}
 	if rec := reveal(t, h, `{"pin":"482916"}`); rec.Code != http.StatusOK {
 		t.Errorf("reveal after 3 messages: status %d", rec.Code)
 	}
-	if page := get(t, h, "/").Body.String(); strings.Contains(page, `class="grow"`) || strings.Contains(page, "novalidate hidden") {
-		t.Error("the pumpkin still hides the PIN")
+	if page := get(t, h, "/").Body.String(); strings.Contains(page, `class="grow"`) || strings.Contains(page, "data-then") {
+		t.Error("the pumpkin is still in the way")
 	}
 
 	// Another replica (or a restart) reads the count off the volume.
@@ -58,14 +64,13 @@ func TestPINWaitsForTheChat(t *testing.T) {
 	}
 }
 
-func TestPINRightAwayWithoutTheSecret(t *testing.T) {
+func TestNoPumpkinWithoutTheSecret(t *testing.T) {
 	s := newServer(t, time.Date(2026, time.July, 20, 8, 0, 0, 0, time.UTC), "Chihiro", func(c *config.Config) {
 		withChatBeforePIN("")(c)
 		c.Secret = ""
 	})
-	// With nothing to unlock, the PIN still guards the chat.
-	if !s.chatNeedsPIN() || s.pinAfterChat() {
-		t.Error("the chat opens without its PIN")
+	if s.pinAfterChat() || strings.Contains(get(t, s.Handler(), "/").Body.String(), `class="grow"`) {
+		t.Error("a pumpkin grows with nothing to unlock")
 	}
 }
 

@@ -120,6 +120,10 @@ type Config struct {
 	// friend's Claude login ($CLAUDE_CONFIG_DIR/birthday-chat), so it shares
 	// its volume. Empty when BIRTHDAY_CHAT_HISTORY is false.
 	ChatHistoryDir string
+	// ChatLockPath is a lock file next to the login: Claude Code runs take
+	// turns on it, so only one at a time (across every replica sharing the
+	// volume) can renew the login. A concurrent renewal can revoke the other.
+	ChatLockPath string
 	// ChatFallback holds the friend's canned replies, used in turn when
 	// Claude can't answer.
 	ChatFallback []string
@@ -184,8 +188,11 @@ func Load(getenv func(string) string) (Config, error) {
 	}
 	if keep, err := boolOr(getenv("BIRTHDAY_CHAT_HISTORY"), true); err != nil {
 		errs = append(errs, fmt.Errorf("BIRTHDAY_CHAT_HISTORY %q: want true or false", getenv("BIRTHDAY_CHAT_HISTORY")))
-	} else if keep {
-		cfg.ChatHistoryDir = chatHistoryDir(getenv)
+	} else if keep && claudeDir(getenv) != "" {
+		cfg.ChatHistoryDir = filepath.Join(claudeDir(getenv), "birthday-chat")
+	}
+	if dir := claudeDir(getenv); dir != "" {
+		cfg.ChatLockPath = filepath.Join(dir, "birthday-claude.lock")
 	}
 	cfg.ChatFallback = DefaultChatFallback
 	if v := strings.TrimSpace(getenv("BIRTHDAY_CHAT_FALLBACK")); v != "" {
@@ -245,13 +252,13 @@ func Load(getenv func(string) string) (Config, error) {
 	return cfg, nil
 }
 
-// chatHistoryDir is birthday-chat in Claude Code's config directory.
-func chatHistoryDir(getenv func(string) string) string {
+// claudeDir is Claude Code's config directory, where its login lives.
+func claudeDir(getenv func(string) string) string {
 	if dir := getenv("CLAUDE_CONFIG_DIR"); dir != "" {
-		return filepath.Join(dir, "birthday-chat")
+		return dir
 	}
 	if home := getenv("HOME"); home != "" {
-		return filepath.Join(home, ".claude", "birthday-chat")
+		return filepath.Join(home, ".claude")
 	}
 	return ""
 }

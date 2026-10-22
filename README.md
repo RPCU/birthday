@@ -72,8 +72,11 @@ comes back on reload, on another device and on every replica sharing the
 volume. Only today's file (in `BIRTHDAY_TIMEZONE`) is read and the older ones
 are deleted, so it starts over every midnight. Reading it back is locked like
 the chat (open card, then the PIN). `BIRTHDAY_CHAT_HISTORY=false` keeps
-nothing. Replies stream in; at most 2 at once and 6 a minute (12 in
-a burst).
+nothing. Replies stream in, 6 a minute (12 in a burst). Claude Code runs one at a
+time, taking turns on a lock file next to the login
+(`$CLAUDE_CONFIG_DIR/birthday-claude.lock`), so replicas sharing the volume
+never renew the login at once (two renewals at once can sign the friend out);
+a second message waits for the first reply.
 
 **Signing in.** The image has Claude Code and a shell. Its login lives in
 `CLAUDE_CONFIG_DIR` (`/home/birthday/.claude`), apart from anything else:

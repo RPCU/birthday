@@ -306,6 +306,11 @@ func (s *Server) claudeFriend(ctx context.Context, system, prompt string, emit f
 	if err != nil {
 		return err
 	}
+	release, err := s.takeClaudeTurn(ctx)
+	if err != nil {
+		return err
+	}
+	defer release()
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("start %s: %w", s.cfg.ChatCommand, err)
 	}

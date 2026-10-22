@@ -189,3 +189,10 @@ func TestLoadChatHistoryDir(t *testing.T) {
 		t.Error("BIRTHDAY_CHAT_HISTORY=maybe accepted")
 	}
 }
+
+func TestLoadChatLockPath(t *testing.T) {
+	cfg, err := Load(env(map[string]string{"CLAUDE_CONFIG_DIR": "/home/birthday/.claude", "BIRTHDAY_CHAT_HISTORY": "false"}))
+	if err != nil || cfg.ChatLockPath != "/home/birthday/.claude/birthday-claude.lock" {
+		t.Errorf("ChatLockPath = %q, %v", cfg.ChatLockPath, err)
+	}
+}

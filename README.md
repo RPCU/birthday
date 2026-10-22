@@ -36,6 +36,7 @@ which the image ships.
 | `BIRTHDAY_CHAT_PROMPT` | no      |                              | More instructions on how the friend acts, added to the built-in cheerful persona (max 8000 characters). |
 | `BIRTHDAY_CHAT_FALLBACK` | no    | six cheerful birthday lines  | What the friend says, one line per reply in turn, when Claude can't answer; `{name}` becomes `BIRTHDAY_NAME` (one per line, max 50 lines of 280 characters). |
 | `BIRTHDAY_CHAT_HISTORY` | no     | `true`                       | Keep today's conversation (see [Chat friend](#chat-friend)).            |
+| `BIRTHDAY_CHAT_NOTES`   | no     | `true`                       | Keep their answers for you (see [Chat friend](#chat-friend)).           |
 | `BIRTHDAY_CHAT_MODEL` | no       | `sonnet`                     | Claude model (`sonnet`, `opus`, `haiku` or a full model ID).           |
 | `BIRTHDAY_CHAT_COMMAND` | no     | `claude`                     | The Claude Code CLI.                                                   |
 | `BIRTHDAY_HOST`       | no       | all interfaces               | Listen address.                                                        |
@@ -58,8 +59,23 @@ stays locked until that PIN is entered (one PIN unlocks both).
 
 `BIRTHDAY_CHAT_PROMPT` teaches the friend more: in-jokes, what to call them,
 what to bring up or avoid. The built-in persona knows the name, the date, the
-age and the card's line, never the secret. It stays in character but won't
-deny being an AI if asked sincerely.
+age and the card's line, never the secret. It's warm but classy, and gently
+gets to know them: now and then one light, open question (what they love,
+dream of, hope for this year), never prying into relationships, health, money
+or anything private, and dropping whatever they dodge. It stays in character
+but won't deny being an AI if asked sincerely, nor that the page's maker can
+read the chat if asked.
+
+**Their answers.** Every message they send is added, after the friend's line
+it answers, to `$CLAUDE_CONFIG_DIR/birthday-answers.md`, next to the login.
+Unlike the day's conversation it's never cleared, and the page never shows
+it. Read it with:
+
+```sh
+kubectl exec <pod> -- cat /home/birthday/.claude/birthday-answers.md
+```
+
+`BIRTHDAY_CHAT_NOTES=false` keeps no notes.
 
 The friend is a blank slate, cut off from the account it runs on: every
 message runs a fresh `claude --print` in an empty directory with no tools, no

@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Banh-Canh/birthday/internal/config"
@@ -42,6 +43,11 @@ type Server struct {
 	chatTries *limiter
 	chatSlots chan struct{}
 	friend    func(ctx context.Context, system, prompt string, emit func(string)) error
+	// awayUntil is when to try Claude again after it failed; until then the
+	// friend answers with canned lines after typing.
+	awayMu    sync.Mutex
+	awayUntil time.Time
+	typing    time.Duration
 	// now is swapped in tests.
 	now func() time.Time
 }
@@ -69,6 +75,7 @@ func New(cfg config.Config, log *slog.Logger) (*Server, error) {
 		pinTries:     newLimiter(pinBurst, pinPerMinute),
 		chatTries:    newLimiter(chatBurst, chatPerMinute),
 		chatSlots:    make(chan struct{}, chatSlots),
+		typing:       fallbackTyping,
 		now:          time.Now,
 	}
 	s.friend = s.claudeFriend

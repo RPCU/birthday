@@ -22,6 +22,7 @@ func withChat(c *config.Config) {
 	c.ChatPrompt = testPrompt
 	c.ChatModel = config.DefaultChatModel
 	c.ChatCommand = config.DefaultChatCommand
+	c.ChatFallback = config.DefaultChatFallback
 }
 
 func withChatAndPIN(c *config.Config) {
@@ -118,13 +119,52 @@ func TestChatStreamsTheFriend(t *testing.T) {
 	}
 }
 
-func TestChatFriendAway(t *testing.T) {
+func TestChatFallsBackWhenClaudeIsAway(t *testing.T) {
 	onTheDay := time.Date(2026, time.July, 20, 8, 0, 0, 0, time.UTC)
 	s := newServer(t, onTheDay, "Chihiro", withChat)
-	s.friend = (&stubFriend{err: errFriendAway}).run
-	rec := postChat(t, s.Handler(), hello)
-	if rec.Code != http.StatusOK || rec.Body.String() != "{\"error\":\"away\"}\n" {
-		t.Errorf("status %d, body %q", rec.Code, rec.Body)
+	calls := 0
+	s.friend = func(context.Context, string, string, func(string)) error {
+		calls++
+		return errFriendAway
+	}
+	h := s.Handler()
+
+	first := strings.ReplaceAll(config.DefaultChatFallback[0], "{name}", "Chihiro")
+	rec := postChat(t, h, hello)
+	if want := `{"text":"` + first + "\"}\n{\"done\":true}\n"; rec.Code != http.StatusOK || rec.Body.String() != want {
+		t.Errorf("status %d, body %q, want %q", rec.Code, rec.Body, want)
+	}
+
+	// The next line, without trying Claude again for a minute.
+	second := `{"messages":[{"from":"me","text":"hi"},{"from":"friend","text":"` + first + `"},{"from":"me","text":"hehe"}]}`
+	if rec := postChat(t, h, second); !strings.Contains(rec.Body.String(), config.DefaultChatFallback[1]) || calls != 1 {
+		t.Errorf("second reply %q after %d Claude calls, want the second line after 1", rec.Body, calls)
+	}
+	s.now = func() time.Time { return onTheDay.Add(awayFor) }
+	postChat(t, h, hello)
+	if calls != 2 {
+		t.Errorf("Claude not tried again after %v", awayFor)
+	}
+}
+
+func TestChatCustomFallback(t *testing.T) {
+	onTheDay := time.Date(2026, time.July, 20, 8, 0, 0, 0, time.UTC)
+	s := newServer(t, onTheDay, "Chihiro", func(c *config.Config) {
+		withChat(c)
+		c.ChatFallback = []string{"Joyeux anniversaire {name} !"}
+	})
+	s.friend = (&stubFriend{err: errors.New("exec: claude: not found")}).run
+	if rec := postChat(t, s.Handler(), hello); !strings.Contains(rec.Body.String(), `"Joyeux anniversaire Chihiro !"`) {
+		t.Errorf("body %q", rec.Body)
+	}
+}
+
+func TestChatCutOffMidReply(t *testing.T) {
+	onTheDay := time.Date(2026, time.July, 20, 8, 0, 0, 0, time.UTC)
+	s := newServer(t, onTheDay, "Chihiro", withChat)
+	s.friend = (&stubFriend{reply: []string{"Happy "}, err: errFriendAway}).run
+	if rec := postChat(t, s.Handler(), hello); rec.Body.String() != "{\"text\":\"Happy \"}\n{\"error\":\"away\"}\n" {
+		t.Errorf("body %q", rec.Body)
 	}
 }
 

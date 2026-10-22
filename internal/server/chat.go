@@ -28,6 +28,11 @@ const (
 	maxChatTurns = 60
 	maxChatText  = 2000
 	chatTimeout  = 2 * time.Minute
+	// awayFor is how long canned replies stand in after Claude fails,
+	// before it's tried again.
+	awayFor = time.Minute
+	// fallbackTyping is the pause before a canned reply.
+	fallbackTyping = 900 * time.Millisecond
 )
 
 type chatMessage struct {
@@ -121,9 +126,18 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 		_ = rc.Flush()
 	}
 
+	// Claude couldn't answer a moment ago: don't make them wait for it again.
+	if s.friendAway() {
+		s.fallback(r.Context(), req.Messages, send)
+		return
+	}
 	ctx, cancel := context.WithTimeout(r.Context(), chatTimeout)
 	defer cancel()
-	err := s.friend(ctx, s.friendSystemPrompt(), s.friendPrompt(req.Messages), func(text string) { send(chatEvent{Text: text}) })
+	said := false
+	err := s.friend(ctx, s.friendSystemPrompt(), s.friendPrompt(req.Messages), func(text string) {
+		said = true
+		send(chatEvent{Text: text})
+	})
 	switch {
 	case err == nil:
 		send(chatEvent{Done: true})
@@ -133,8 +147,51 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 		if !errors.Is(err, errFriendAway) {
 			s.log.Warn("chat friend failed", "error", err)
 		}
-		send(chatEvent{Error: "away"})
+		s.markAway()
+		if said {
+			// Cut off mid-reply: a canned line wouldn't follow on.
+			send(chatEvent{Error: "away"})
+			return
+		}
+		s.fallback(r.Context(), req.Messages, send)
 	}
+}
+
+// friendAway reports whether Claude failed within the last awayFor.
+func (s *Server) friendAway() bool {
+	s.awayMu.Lock()
+	defer s.awayMu.Unlock()
+	return s.now().Before(s.awayUntil)
+}
+
+func (s *Server) markAway() {
+	s.awayMu.Lock()
+	defer s.awayMu.Unlock()
+	s.awayUntil = s.now().Add(awayFor)
+}
+
+// fallback answers with the next canned line (BIRTHDAY_CHAT_FALLBACK) after
+// a short pause, as if typed: the friend stays cheerful without Claude.
+func (s *Server) fallback(ctx context.Context, msgs []chatMessage, send func(chatEvent)) {
+	lines := s.cfg.ChatFallback
+	if len(lines) == 0 {
+		send(chatEvent{Error: "away"})
+		return
+	}
+	turn := 0
+	for _, m := range msgs {
+		if m.From == "me" {
+			turn++
+		}
+	}
+	select {
+	case <-ctx.Done():
+		return
+	case <-time.After(s.typing):
+	}
+	line := strings.ReplaceAll(lines[(turn-1)%len(lines)], "{name}", s.cfg.Name)
+	send(chatEvent{Text: line})
+	send(chatEvent{Done: true})
 }
 
 func validChat(msgs []chatMessage) error {

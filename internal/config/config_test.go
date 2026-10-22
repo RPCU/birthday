@@ -156,3 +156,17 @@ func TestLoadChat(t *testing.T) {
 		}
 	}
 }
+
+func TestLoadChatFallback(t *testing.T) {
+	cfg, err := Load(env(map[string]string{}))
+	if err != nil || len(cfg.ChatFallback) != len(DefaultChatFallback) {
+		t.Fatalf("default fallback: %v, %q", err, cfg.ChatFallback)
+	}
+	cfg, err = Load(env(map[string]string{"BIRTHDAY_CHAT_FALLBACK": "  Joyeux anniversaire !\n\n  Bisous {name}  \n"}))
+	if err != nil || len(cfg.ChatFallback) != 2 || cfg.ChatFallback[1] != "Bisous {name}" {
+		t.Errorf("custom fallback: %v, %q", err, cfg.ChatFallback)
+	}
+	if _, err := Load(env(map[string]string{"BIRTHDAY_CHAT_FALLBACK": strings.Repeat("a", maxMessageLen+1)})); err == nil {
+		t.Error("an over-long fallback line is accepted")
+	}
+}

@@ -70,7 +70,8 @@ Use `devenv shell -- <cmd>`, which provides Go, gofumpt, golines and air.
   no tools, MCP servers, connectors, plugins, settings, memory or saved
   sessions, an empty working directory, and never `BIRTHDAY_*` in its
   environment. Never put the secret or the PIN in its prompt. Claude failures
-  (not signed in, limits) log at Warn.
+  (not signed in, missing, limits) log at Warn, and the friend answers with
+  the canned `BIRTHDAY_CHAT_FALLBACK` lines instead for a minute (`awayFor`).
 - Before it unlocks, a teaser (`BIRTHDAY_TEASER`, gift box) stands in for
   the card. It must stay generic: never derive it from the message or the
   signature.

@@ -60,8 +60,9 @@ stays locked until that PIN is entered (one PIN unlocks both).
 `BIRTHDAY_CHAT_PROMPT` teaches the friend more: in-jokes, what to call them,
 what to bring up or avoid. The built-in persona knows the name, the date, the
 age and the card's line, never the secret. It's warm but classy, and gently
-gets to know them: now and then one light, open question (what they love,
-dream of, hope for this year), never prying into relationships, health, money
+gets to know their tastes: one light question at a time (favourite flowers,
+colours, scents, food and drinks, music, films, books, style, dream trips,
+their perfect day), never prying into relationships, health, money
 or anything private, and dropping whatever they dodge. It stays in character
 but won't deny being an AI if asked sincerely, nor that the page's maker can
 read the chat if asked.

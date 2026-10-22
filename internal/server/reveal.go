@@ -25,6 +25,8 @@ type revealRequest struct {
 type revealResponse struct {
 	Secret string `json:"secret"`
 	Link   bool   `json:"link"`
+	// Intro comes with the secret when the pumpkin kept it off the page.
+	Intro string `json:"intro,omitempty"`
 }
 
 // handleReveal hands out the PIN-guarded secret once the card is open.
@@ -64,8 +66,12 @@ func (s *Server) handleReveal(w http.ResponseWriter, r *http.Request) {
 	// Each reveal spends the messages that earned it: the next one needs a
 	// fresh round (unless BIRTHDAY_CHAT_COUNT_RESET is off).
 	s.resetTalk()
+	res := revealResponse{Secret: s.cfg.Secret, Link: isLink(s.cfg.Secret)}
+	if s.pinAfterChat() {
+		res.Intro = s.cfg.SecretIntro
+	}
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(revealResponse{Secret: s.cfg.Secret, Link: isLink(s.cfg.Secret)})
+	_ = json.NewEncoder(w).Encode(res)
 }
 
 // samePIN compares in constant time; hashing first hides the length too.

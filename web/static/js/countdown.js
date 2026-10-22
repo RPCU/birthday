@@ -433,7 +433,7 @@
     // Shows the secret the server handed over in place of el, already
     // revealed.
     async function showSecret(el, res) {
-        const { secret, link } = await res.json();
+        const { secret, link, intro } = await res.json();
         const code = document.createElement("button");
         code.type = "button";
         code.className = "extra-code";
@@ -443,6 +443,13 @@
         value.textContent = secret;
         code.append(value);
         el.replaceWith(code);
+        if (intro && !code.parentElement.querySelector(".extra-intro")) {
+            // Kept off the page until the pumpkin was ripe.
+            const p = document.createElement("p");
+            p.className = "extra-intro";
+            p.textContent = intro;
+            code.before(p);
+        }
         if (link) {
             const a = document.createElement("a");
             a.className = "extra-open";

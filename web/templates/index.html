@@ -83,6 +83,39 @@
                 <p class="iou-line">{{.Message}}</p>
                 <p class="iou-meta">{{if .Today}}Redeemable from today{{else}}Still redeemable{{end}} · offer open until {{.LastOpenDay}}</p>
                 {{with .From}}<p class="iou-from">— {{.}}</p>{{end}}
+                {{if .Chat}}
+                <section class="chat{{if .ChatLocked}} is-locked{{end}}" aria-label="Chat with {{.ChatName}}" data-me="{{.Name}}" data-friend="{{.ChatName}}">
+                    <header class="chat-head">
+                        <span class="chat-avatar" aria-hidden="true">{{.ChatInitial}}</span>
+                        <div class="chat-who">
+                            <p class="chat-name">{{.ChatName}}</p>
+                            <p class="chat-status"><span class="chat-dot" aria-hidden="true"></span>here to celebrate you</p>
+                        </div>
+                    </header>
+                    <ol class="chat-log" aria-live="polite"{{if .ChatLocked}} hidden{{end}}>
+                        <li class="chat-msg from-friend">Happy birthday, {{.Name}}! 🎂 I’m so happy for you today. How are you celebrating?</li>
+                    </ol>
+                    {{if .ChatLocked}}{{if .SecretLocked}}
+                    <p class="chat-lock">Enter your PIN below to chat with {{.ChatName}}</p>
+                    {{else}}
+                    <form class="extra-pin chat-pin" novalidate>
+                        <label class="extra-pin-label" for="chat-pin">Enter your PIN to chat with {{.ChatName}}</label>
+                        <div class="extra-pin-row">
+                            <input id="chat-pin" name="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="12" required>
+                            <button type="submit">Unlock</button>
+                        </div>
+                        <p class="extra-pin-msg" aria-live="polite"></p>
+                    </form>
+                    {{end}}{{end}}
+                    <form class="chat-form" novalidate{{if .ChatLocked}} hidden{{end}}>
+                        <label class="visually-hidden" for="chat-input">Message {{.ChatName}}</label>
+                        <textarea id="chat-input" name="message" rows="1" maxlength="2000" placeholder="Say something to {{.ChatName}}…" required></textarea>
+                        <button type="submit" aria-label="Send">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12l16-8-6 16-2.5-6.5z"/></svg>
+                        </button>
+                    </form>
+                </section>
+                {{end}}
                 {{if .SecretLocked}}
                 <div class="extra">
                     <p class="extra-intro">{{.SecretIntro}}</p>

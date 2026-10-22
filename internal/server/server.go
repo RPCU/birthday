@@ -3,6 +3,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -34,8 +35,13 @@ type Server struct {
 	// assetVersion fingerprints the CSS and JS so a deploy never serves new
 	// HTML with stale cached assets.
 	assetVersion string
-	// pinTries throttles PIN guesses to /api/reveal.
+	// pinTries throttles PIN guesses to /api/reveal and /api/chat.
 	pinTries *limiter
+	// chatTries and chatSlots keep the chat friend from running away with
+	// the Claude login; friend writes the replies (swapped in tests).
+	chatTries *limiter
+	chatSlots chan struct{}
+	friend    func(ctx context.Context, system, prompt string, emit func(string)) error
 	// now is swapped in tests.
 	now func() time.Time
 }
@@ -54,7 +60,19 @@ func New(cfg config.Config, log *slog.Logger) (*Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("static assets: %w", err)
 	}
-	return &Server{cfg: cfg, log: log, page: page, static: static, assetVersion: version, pinTries: &limiter{}, now: time.Now}, nil
+	s := &Server{
+		cfg:          cfg,
+		log:          log,
+		page:         page,
+		static:       static,
+		assetVersion: version,
+		pinTries:     newLimiter(pinBurst, pinPerMinute),
+		chatTries:    newLimiter(chatBurst, chatPerMinute),
+		chatSlots:    make(chan struct{}, chatSlots),
+		now:          time.Now,
+	}
+	s.friend = s.claudeFriend
+	return s, nil
 }
 
 // isLink reports whether the secret is a single web link, so the page can
@@ -62,6 +80,14 @@ func New(cfg config.Config, log *slog.Logger) (*Server, error) {
 func isLink(s string) bool {
 	u, err := url.Parse(s)
 	return err == nil && (u.Scheme == "https" || u.Scheme == "http") && u.Host != "" && !strings.ContainsAny(s, " \n")
+}
+
+// initial is the first letter of name, for the chat avatar.
+func initial(name string) string {
+	for _, r := range name {
+		return strings.ToUpper(string(r))
+	}
+	return ""
 }
 
 // fingerprint returns a short content hash of the named files.
@@ -84,6 +110,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/countdown", s.handleCountdown)
 	// Same-origin only: rejects cross-site form posts and fetches.
 	mux.Handle("POST /api/reveal", http.NewCrossOriginProtection().Handler(http.HandlerFunc(s.handleReveal)))
+	mux.Handle("POST /api/chat", http.NewCrossOriginProtection().Handler(http.HandlerFunc(s.handleChat)))
 	mux.HandleFunc("GET /healthz", handleHealth)
 	mux.Handle("GET /static/", http.StripPrefix("/static/", cacheFor(time.Hour, http.FileServerFS(s.static))))
 	return s.recoverPanics(securityHeaders(s.logRequests(mux)))
@@ -114,6 +141,12 @@ type moment struct {
 	SecretLocked bool   `json:"-"`
 	SecretURL    bool   `json:"-"`
 	SecretIntro  string `json:"-"`
+	// Chat is set only while Open and the chat is on; ChatLocked means it
+	// needs the PIN first.
+	Chat         bool   `json:"-"`
+	ChatLocked   bool   `json:"-"`
+	ChatName     string `json:"-"`
+	ChatInitial  string `json:"-"`
 	DaysLeft     int    `json:"-"`
 	Halloween    bool   `json:"-"`
 	DateLabel    string `json:"-"`
@@ -127,8 +160,9 @@ func (s *Server) moment() moment {
 	st := s.cfg.Birthday.At(now)
 	open, until := s.cfg.Birthday.Reveal(now, s.cfg.OpenDays)
 	var message, from, secret, lastOpenDay string
-	var locked bool
+	var locked, chat bool
 	if open {
+		chat = s.cfg.Chat
 		message, from = s.cfg.Message, s.cfg.From
 		if s.cfg.SecretPIN == "" {
 			secret = s.cfg.Secret
@@ -153,6 +187,10 @@ func (s *Server) moment() moment {
 		SecretURL:    isLink(secret),
 		SecretLocked: locked,
 		SecretIntro:  s.cfg.SecretIntro,
+		Chat:         chat,
+		ChatLocked:   chat && s.cfg.SecretPIN != "",
+		ChatName:     s.cfg.ChatName,
+		ChatInitial:  initial(s.cfg.ChatName),
 		DaysLeft:     st.DaysUntil(now),
 		Halloween:    s.cfg.Halloween,
 		DateLabel:    st.Start.Format("January 2"),

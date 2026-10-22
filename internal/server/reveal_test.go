@@ -98,7 +98,7 @@ func TestRevealRejectsCrossOrigin(t *testing.T) {
 }
 
 func TestLimiterRefills(t *testing.T) {
-	var l limiter
+	l := newLimiter(pinBurst, pinPerMinute)
 	t0 := time.Date(2026, time.July, 20, 8, 0, 0, 0, time.UTC)
 	for range pinBurst {
 		if !l.allow(t0) {

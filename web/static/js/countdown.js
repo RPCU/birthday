@@ -200,10 +200,127 @@
     const extra = document.querySelector(".extra-code");
     if (extra) wireExtra(extra);
 
-    // PIN-guarded extra: the server only hands the secret over for the right
-    // PIN, then it is shown already revealed.
-    const pinForm = document.querySelector(".extra-pin");
-    if (pinForm) {
+    // The chat friend. The server keeps nothing, so the page sends the whole
+    // conversation with each message; it lasts until the page reloads.
+    const chat = document.querySelector(".chat");
+    let chatPIN = "";
+    let unlockChat = () => {};
+    if (chat) {
+        const log = chat.querySelector(".chat-log");
+        const form = chat.querySelector(".chat-form");
+        const input = form.querySelector("textarea");
+        const send = form.querySelector("button");
+        const friend = chat.dataset.friend;
+        const history = [...log.querySelectorAll(".chat-msg")].map((li) => ({ from: "friend", text: li.textContent.trim() }));
+
+        const bubble = (cls, text) => {
+            const li = document.createElement("li");
+            li.className = `chat-msg ${cls}`;
+            li.textContent = text;
+            log.append(li);
+            log.scrollTop = log.scrollHeight;
+            return li;
+        };
+
+        unlockChat = (pin) => {
+            if (!chat.classList.contains("is-locked")) return;
+            chatPIN = pin;
+            chat.classList.remove("is-locked");
+            chat.querySelector(".chat-lock, .chat-pin")?.remove();
+            log.hidden = false;
+            form.hidden = false;
+        };
+
+        const grow = () => {
+            input.style.height = "auto";
+            input.style.height = `${input.scrollHeight}px`;
+        };
+        input.addEventListener("input", grow);
+        input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+                e.preventDefault();
+                form.requestSubmit();
+            }
+        });
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const text = input.value.trim();
+            if (!text || send.disabled) return;
+            send.disabled = true;
+            input.value = "";
+            grow();
+            bubble("from-me", text);
+            history.push({ from: "me", text });
+
+            const reply = bubble("from-friend is-typing", "");
+            reply.append(...[0, 1, 2].map(() => document.createElement("span")));
+            let said = "";
+            let failed = "";
+            try {
+                const res = await fetch("/api/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ pin: chatPIN, messages: history }),
+                });
+                if (!res.ok) {
+                    failed =
+                        res.status === 429
+                            ? `${friend} needs a tiny breather. Try again in a moment!`
+                            : `${friend} couldn't get your message. Reload the page and try again.`;
+                } else {
+                    // One JSON object per line: {text}, then {done} or {error}.
+                    const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+                    let buf = "";
+                    let done = false;
+                    while (!done) {
+                        const chunk = await reader.read();
+                        if (chunk.done) break;
+                        buf += chunk.value;
+                        let nl;
+                        while ((nl = buf.indexOf("\n")) >= 0) {
+                            const line = buf.slice(0, nl);
+                            buf = buf.slice(nl + 1);
+                            if (!line) continue;
+                            const ev = JSON.parse(line);
+                            if (ev.text) {
+                                if (!said) reply.className = "chat-msg from-friend";
+                                said += ev.text;
+                                reply.textContent = said;
+                                log.scrollTop = log.scrollHeight;
+                            }
+                            if (ev.error) failed = `${friend} stepped away for a moment. Try again in a bit!`;
+                            if (ev.done || ev.error) done = true;
+                        }
+                    }
+                    if (!done && !failed) failed = `${friend} got cut off. Try again?`;
+                }
+            } catch {
+                failed = "Couldn't reach the server. Try again.";
+            }
+
+            if (said.trim()) {
+                history.push({ from: "friend", text: said.trim() });
+            } else {
+                reply.remove();
+            }
+            if (failed) {
+                bubble("is-note", failed);
+                // Nothing came back: let the message be sent again.
+                if (!said.trim()) {
+                    history.pop();
+                    input.value = text;
+                    grow();
+                }
+            }
+            send.disabled = false;
+            input.focus();
+        });
+    }
+
+    // A PIN form: check posts the PIN and returns the response; onOk runs
+    // when the server takes it.
+    function wirePin(pinForm, check, onOk) {
         const input = pinForm.querySelector("input");
         const button = pinForm.querySelector("button");
         const msg = pinForm.querySelector(".extra-pin-msg");
@@ -214,34 +331,9 @@
             button.disabled = true;
             msg.textContent = "";
             try {
-                const res = await fetch("/api/reveal", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ pin }),
-                });
+                const res = await check(pin);
                 if (res.ok) {
-                    const { secret, link } = await res.json();
-                    const code = document.createElement("button");
-                    code.type = "button";
-                    code.className = "extra-code";
-                    code.setAttribute("aria-label", "Copy the surprise");
-                    const value = document.createElement("span");
-                    value.className = "extra-value";
-                    value.textContent = secret;
-                    code.append(value);
-                    pinForm.replaceWith(code);
-                    if (link) {
-                        const a = document.createElement("a");
-                        a.className = "extra-open";
-                        a.href = secret;
-                        a.target = "_blank";
-                        a.rel = "noopener noreferrer";
-                        a.textContent = "Open";
-                        code.after(a);
-                    }
-                    wireExtra(code);
-                    const r = code.getBoundingClientRect();
-                    burst(r.left + r.width / 2, r.top, 60, 1.4);
+                    await onOk(pin, res);
                     return;
                 }
                 if (res.status === 429) {
@@ -262,6 +354,61 @@
                 if (document.body.contains(input)) input.focus();
             }
         });
+    }
+
+    const post = (url, body) =>
+        fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+        });
+
+    // PIN-guarded extra: the server only hands the secret over for the right
+    // PIN, then it is shown already revealed. The same PIN unlocks the chat.
+    const pinForm = document.querySelector(".extra-pin:not(.chat-pin)");
+    if (pinForm) {
+        wirePin(
+            pinForm,
+            (pin) => post("/api/reveal", { pin }),
+            async (pin, res) => {
+                const { secret, link } = await res.json();
+                const code = document.createElement("button");
+                code.type = "button";
+                code.className = "extra-code";
+                code.setAttribute("aria-label", "Copy the surprise");
+                const value = document.createElement("span");
+                value.className = "extra-value";
+                value.textContent = secret;
+                code.append(value);
+                pinForm.replaceWith(code);
+                if (link) {
+                    const a = document.createElement("a");
+                    a.className = "extra-open";
+                    a.href = secret;
+                    a.target = "_blank";
+                    a.rel = "noopener noreferrer";
+                    a.textContent = "Open";
+                    code.after(a);
+                }
+                wireExtra(code);
+                const r = code.getBoundingClientRect();
+                burst(r.left + r.width / 2, r.top, 60, 1.4);
+                unlockChat(pin);
+            },
+        );
+    }
+
+    // The chat's own PIN form, when there's no PIN-guarded extra to share.
+    const chatPinForm = document.querySelector(".chat-pin");
+    if (chatPinForm) {
+        wirePin(
+            chatPinForm,
+            (pin) => post("/api/chat", { pin, messages: [] }),
+            (pin) => {
+                unlockChat(pin);
+                chat.querySelector(".chat-form textarea").focus();
+            },
+        );
     }
 
     const glass = document.querySelector(".glass");

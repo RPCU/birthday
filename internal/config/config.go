@@ -31,6 +31,18 @@ const DefaultTeaser = "A little something is waiting for you"
 // unset.
 const DefaultSecretIntro = "And a little extra, just for you"
 
+// DefaultChatName is who the birthday chat friend is when BIRTHDAY_CHAT_NAME
+// is unset.
+const DefaultChatName = "Sunny"
+
+// DefaultChatModel is the Claude model the chat friend runs on when
+// BIRTHDAY_CHAT_MODEL is unset.
+const DefaultChatModel = "sonnet"
+
+// DefaultChatCommand is the Claude Code CLI when BIRTHDAY_CHAT_COMMAND is
+// unset.
+const DefaultChatCommand = "claude"
+
 // DefaultOpenDays is how long the I.O.U. stays visible after the birthday
 // when BIRTHDAY_OPEN_DAYS is unset.
 const DefaultOpenDays = 15
@@ -42,6 +54,7 @@ const (
 	maxSecretLen  = 500
 	minPINLen     = 4
 	maxPINLen     = 12
+	maxPromptLen  = 8000
 )
 
 // Config is the validated application configuration.
@@ -77,6 +90,17 @@ type Config struct {
 
 	// Halloween adds a few quiet seasonal touches (moon, bats, a cobweb).
 	Halloween bool
+
+	// Chat adds a chat with a cheerful friend (Claude Code on the login made
+	// in the container) to the open card, locked like the secret: only while
+	// open, and behind SecretPIN when one is set. ChatName is the friend's
+	// name, ChatPrompt extra instructions on how they act, ChatModel the
+	// model and ChatCommand the Claude Code CLI.
+	Chat        bool
+	ChatName    string
+	ChatPrompt  string
+	ChatModel   string
+	ChatCommand string
 }
 
 // Load builds the configuration from getenv (os.Getenv in production) and
@@ -93,6 +117,11 @@ func Load(getenv func(string) string) (Config, error) {
 		Secret:      strings.TrimSpace(getenv("BIRTHDAY_SECRET")),
 		SecretIntro: valueOr(strings.TrimSpace(getenv("BIRTHDAY_SECRET_INTRO")), DefaultSecretIntro),
 		SecretPIN:   strings.TrimSpace(getenv("BIRTHDAY_SECRET_PIN")),
+
+		ChatName:    valueOr(strings.TrimSpace(getenv("BIRTHDAY_CHAT_NAME")), DefaultChatName),
+		ChatPrompt:  strings.TrimSpace(getenv("BIRTHDAY_CHAT_PROMPT")),
+		ChatModel:   valueOr(strings.TrimSpace(getenv("BIRTHDAY_CHAT_MODEL")), DefaultChatModel),
+		ChatCommand: valueOr(strings.TrimSpace(getenv("BIRTHDAY_CHAT_COMMAND")), DefaultChatCommand),
 	}
 
 	var errs []error
@@ -119,6 +148,23 @@ func Load(getenv func(string) string) (Config, error) {
 	}
 	if utf8.RuneCountInString(cfg.From) > maxNameLen {
 		errs = append(errs, fmt.Errorf("BIRTHDAY_FROM: at most %d characters", maxNameLen))
+	}
+
+	if v := getenv("BIRTHDAY_CHAT"); v != "" {
+		if b, err := strconv.ParseBool(v); err != nil {
+			errs = append(errs, fmt.Errorf("BIRTHDAY_CHAT %q: want true or false", v))
+		} else {
+			cfg.Chat = b
+		}
+	}
+	if utf8.RuneCountInString(cfg.ChatName) > maxNameLen {
+		errs = append(errs, fmt.Errorf("BIRTHDAY_CHAT_NAME: at most %d characters", maxNameLen))
+	}
+	if utf8.RuneCountInString(cfg.ChatPrompt) > maxPromptLen {
+		errs = append(errs, fmt.Errorf("BIRTHDAY_CHAT_PROMPT: at most %d characters", maxPromptLen))
+	}
+	if strings.HasPrefix(cfg.ChatModel, "-") || strings.ContainsAny(cfg.ChatModel, " \t\n") {
+		errs = append(errs, fmt.Errorf("BIRTHDAY_CHAT_MODEL %q: want a model name such as sonnet", cfg.ChatModel))
 	}
 
 	date := strings.TrimSpace(getenv("BIRTHDAY_DATE"))

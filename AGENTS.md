@@ -39,7 +39,8 @@ Use `devenv shell -- <cmd>`, which provides Go, gofumpt, golines and air.
 
 ## Conventions
 
-- Standard library only. Adding a dependency means `vendorHash` in
+- Standard library only (the chat shells out to the `claude` CLI, which the
+  images ship). Adding a dependency means `vendorHash` in
   `nix/binaries.nix` stops being `null` and has to be computed.
 - Logging is `log/slog` (JSON) only. Hestia's `default-error-rate` alert fires
   on **any `ERROR` log line**, so log at ERROR only for real failures.
@@ -62,6 +63,14 @@ Use `devenv shell -- <cmd>`, which provides Go, gofumpt, golines and air.
   returns it, after a constant-time PIN check behind a global token bucket
   (`reveal.go`) and `http.CrossOriginProtection`. Never log the PIN; log wrong
   guesses at Warn, not Error (hestia alerts on ERROR lines).
+- The chat friend (`BIRTHDAY_CHAT`, `chat.go`) is locked exactly like the
+  secret: rendered and served (`POST /api/chat`) only while open, and behind
+  `BIRTHDAY_SECRET_PIN` when set, with wrong PINs draining the same
+  `pinTries` bucket. Keep Claude Code isolated (`claudeArgs`/`claudeEnv`):
+  no tools, MCP servers, connectors, plugins, settings, memory or saved
+  sessions, an empty working directory, and never `BIRTHDAY_*` in its
+  environment. Never put the secret or the PIN in its prompt. Claude failures
+  (not signed in, limits) log at Warn.
 - Before it unlocks, a teaser (`BIRTHDAY_TEASER`, gift box) stands in for
   the card. It must stay generic: never derive it from the message or the
   signature.
@@ -71,7 +80,9 @@ Use `devenv shell -- <cmd>`, which provides Go, gofumpt, golines and air.
 - All dates come from the server (`data-now` corrects client clock skew).
   The JS only reloads once `/api/countdown` agrees the state changed.
 - The image's default command must start the server (`serve`): OpenChoreo
-  cannot set command/args.
+  cannot set command/args. Both images (Dockerfile, `nix/oci.nix`) ship Claude
+  Code, a shell for `claude auth login`, and a writable `/home/birthday`
+  with `CLAUDE_CONFIG_DIR=/home/birthday/.claude`; keep them in sync.
 - `workload.yaml` (repo root) is the OpenChoreo workload descriptor: it
   declares `endpoint-1`, HTTP on 8080, which hestia's `http-route` trait and
   the web-application ComponentType rely on. Keep its port in sync with

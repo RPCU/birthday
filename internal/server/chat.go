@@ -120,6 +120,9 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/x-ndjson")
 	w.Header().Set("X-Accel-Buffering", "no")
 	w.WriteHeader(http.StatusOK)
+	// Send the headers now: Claude Code can take seconds to start, and a
+	// gateway that sees nothing gives up with a 504.
+	_ = rc.Flush()
 	enc := json.NewEncoder(w)
 	send := func(ev chatEvent) {
 		_ = enc.Encode(ev)

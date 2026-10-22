@@ -267,7 +267,7 @@
                     failed =
                         res.status === 429
                             ? `${friend} needs a tiny breather. Try again in a moment!`
-                            : `${friend} couldn't get your message. Reload the page and try again.`;
+                            : `${friend} couldn't get your message (${res.status}). Reload the page and try again.`;
                 } else {
                     // One JSON object per line: {text}, then {done} or {error}.
                     const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();

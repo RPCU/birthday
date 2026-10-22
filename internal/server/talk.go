@@ -39,7 +39,8 @@ func (s *Server) talkedLocked() int {
 }
 
 // resetTalk starts the count over (cfg.ChatCountReset): every time the PIN
-// opens the chat, the secret waits for a fresh round of messages.
+// opens the chat and every time the secret is revealed, so each reveal takes
+// a fresh round of messages.
 func (s *Server) resetTalk() {
 	if !s.pinAfterChat() || !s.cfg.ChatCountReset {
 		return

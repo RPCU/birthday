@@ -74,10 +74,19 @@ func TestPINWaitsForTheChat(t *testing.T) {
 	if rec := reveal(t, h, `{"pin":"482916"}`); rec.Code != http.StatusOK {
 		t.Errorf("reveal after 3 messages: status %d", rec.Code)
 	}
-	// Another replica (or a restart) reads the count off the volume.
+	// The reveal spent the count, on every replica sharing the volume.
+	if rec := reveal(t, h, `{"pin":"482916"}`); rec.Code != http.StatusConflict {
+		t.Errorf("a second reveal: status %d, want 409", rec.Code)
+	}
 	other := newServer(t, onTheDay, "Chihiro", withChatBeforePIN(talked))
-	if left := other.messagesLeft(); left != 0 {
-		t.Errorf("another server has %d messages left", left)
+	if left := other.messagesLeft(); left != 3 {
+		t.Errorf("another server has %d messages left after the reveal, want 3", left)
+	}
+
+	// Another replica (or a restart) reads the count off the volume.
+	postChat(t, h, `{"pin":"482916","messages":[{"from":"me","text":"hi"}]}`)
+	if left := other.messagesLeft(); left != 2 {
+		t.Errorf("another server has %d messages left, want 2", left)
 	}
 
 	// The next visit: the pumpkin again, and the PIN starts the count over.
@@ -87,11 +96,8 @@ func TestPINWaitsForTheChat(t *testing.T) {
 	if rec := postChat(t, h, `{"pin":"482916","messages":[]}`); rec.Code != http.StatusOK {
 		t.Fatalf("unlock: status %d", rec.Code)
 	}
-	if rec := reveal(t, h, `{"pin":"482916"}`); rec.Code != http.StatusConflict {
-		t.Errorf("reveal right after the PIN: status %d, want 409", rec.Code)
-	}
 	if left := other.messagesLeft(); left != 3 {
-		t.Errorf("another server has %d messages left after the reset, want 3", left)
+		t.Errorf("another server has %d messages left after the PIN, want 3", left)
 	}
 }
 

@@ -137,6 +137,9 @@ func (s *Server) Handler() http.Handler {
 // to dress up.
 const buildupDays = 10
 
+// partyFlecks is how many confetti flecks drift by once the card is open.
+const partyFlecks = 8
+
 // moment is everything the page and the JSON feed say about "now".
 type moment struct {
 	Name string `json:"name"`
@@ -173,10 +176,12 @@ type moment struct {
 	ChatBefore  int    `json:"-"`
 	DaysLeft    int    `json:"-"`
 	// Buildup is the party building up over the last buildupDays before
-	// the birthday: 1 ten days before, up to 10 the day before, else 0.
-	// Flecks is how many slow confetti flecks drift by (half as many).
+	// the birthday: 1 ten days before, up to 10 the day before, and all of
+	// it while Open. Flecks is how many slow confetti flecks drift by (half
+	// as many, more while Open). Party adds balloons while Open.
 	Buildup      int    `json:"-"`
 	Flecks       int    `json:"-"`
+	Party        bool   `json:"-"`
 	Halloween    bool   `json:"-"`
 	DateLabel    string `json:"-"`
 	LastOpenDay  string `json:"-"`
@@ -191,8 +196,13 @@ func (s *Server) moment() moment {
 	var message, from, secret, lastOpenDay string
 	var locked, chat bool
 	var waits, buildup int
-	if days := st.DaysUntil(now); !open && days >= 1 && days <= buildupDays {
+	flecks := 0
+	switch days := st.DaysUntil(now); {
+	case open:
+		buildup, flecks = buildupDays, partyFlecks
+	case days >= 1 && days <= buildupDays:
 		buildup = buildupDays + 1 - days
+		flecks = buildup / 2
 	}
 	if open {
 		chat = s.cfg.Chat
@@ -236,7 +246,8 @@ func (s *Server) moment() moment {
 		ChatBefore:   s.cfg.ChatBeforePIN,
 		DaysLeft:     st.DaysUntil(now),
 		Buildup:      buildup,
-		Flecks:       buildup / 2,
+		Flecks:       flecks,
+		Party:        open,
 		Halloween:    s.cfg.Halloween,
 		DateLabel:    st.Start.Format("January 2"),
 		LastOpenDay:  lastOpenDay,

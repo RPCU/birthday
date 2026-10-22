@@ -53,7 +53,9 @@ lists every problem.
 Over the last ten days the countdown page dresses up, a little more each
 day: a bunting garland fills in from the middle (a pennant a day), gold
 sparkles twinkle (one more a day) and, from five days out, a few confetti
-flecks drift by. All of it stays faint and behind the countdown, and
+flecks drift by. Once the card is open, the whole party is up: the full
+garland, every sparkle, more confetti and a few balloons drifting past the
+edges. All of it stays faint and behind the page, and
 `prefers-reduced-motion` stills it.
 
 ## Chat friend

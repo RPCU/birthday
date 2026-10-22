@@ -49,6 +49,7 @@ type Server struct {
 	awayUntil time.Time
 	typing    time.Duration
 	history   chatHistory
+	notes     sync.Mutex
 	// claudeTurn lets one Claude Code run at a time in this process (see
 	// takeClaudeTurn).
 	claudeTurn chan struct{}

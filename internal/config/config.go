@@ -124,6 +124,11 @@ type Config struct {
 	// turns on it, so only one at a time (across every replica sharing the
 	// volume) can renew the login. A concurrent renewal can revoke the other.
 	ChatLockPath string
+	// ChatNotesPath is a Markdown file, next to the login, where every
+	// message the birthday person sends is added after the friend's line it
+	// answers: kept for the page's owner, never cleared nor shown on the
+	// page. Empty when BIRTHDAY_CHAT_NOTES is false.
+	ChatNotesPath string
 	// ChatFallback holds the friend's canned replies, used in turn when
 	// Claude can't answer.
 	ChatFallback []string
@@ -193,6 +198,11 @@ func Load(getenv func(string) string) (Config, error) {
 	}
 	if dir := claudeDir(getenv); dir != "" {
 		cfg.ChatLockPath = filepath.Join(dir, "birthday-claude.lock")
+	}
+	if keep, err := boolOr(getenv("BIRTHDAY_CHAT_NOTES"), true); err != nil {
+		errs = append(errs, fmt.Errorf("BIRTHDAY_CHAT_NOTES %q: want true or false", getenv("BIRTHDAY_CHAT_NOTES")))
+	} else if keep && claudeDir(getenv) != "" {
+		cfg.ChatNotesPath = filepath.Join(claudeDir(getenv), "birthday-answers.md")
 	}
 	cfg.ChatFallback = DefaultChatFallback
 	if v := strings.TrimSpace(getenv("BIRTHDAY_CHAT_FALLBACK")); v != "" {

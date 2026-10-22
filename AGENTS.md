@@ -16,7 +16,8 @@ Birthday is a one-page Go web app: a countdown to `BIRTHDAY_DATE` for
 `BIRTHDAY_NAME`, an I.O.U. card showing `BIRTHDAY_MESSAGE` (default
 "I owe you a birthday drink"), and a celebration state on the day itself.
 There is no auth. Everything is read from the environment; the only thing
-written is the chat friend's conversation of the day (`history.go`).
+written is the chat friend's conversation of the day (`history.go`) and the
+birthday person's answers (`notes.go`).
 
 Module path: `github.com/Banh-Canh/birthday`.
 
@@ -80,6 +81,11 @@ Use `devenv shell -- <cmd>`, which provides Go, gofumpt, golines and air.
   Claude Code runs take turns (`turn.go`: an in-process slot plus a flock on
   `$CLAUDE_CONFIG_DIR/birthday-claude.lock`, shared by replicas on the
   volume): concurrent OAuth renewals revoke each other.
+  Each message the birthday person sends is appended, after the friend's
+  line before it, to `$CLAUDE_CONFIG_DIR/birthday-answers.md` (`notes.go`)
+  for the page's owner: never cleared, never served. The persona gets to
+  know them without prying (one light question at a time, nothing private)
+  and admits the owner can read the chat if asked; keep it that way.
 - Before it unlocks, a teaser (`BIRTHDAY_TEASER`, gift box) stands in for
   the card. It must stay generic: never derive it from the message or the
   signature.

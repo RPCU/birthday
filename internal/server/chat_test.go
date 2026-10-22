@@ -360,3 +360,43 @@ func TestChatSavesCannedReplies(t *testing.T) {
 		t.Errorf("saved chat %s lacks the canned reply", rec.Body)
 	}
 }
+
+func TestChatNotesHerAnswers(t *testing.T) {
+	onTheDay := time.Date(2026, time.July, 20, 8, 0, 0, 0, time.UTC)
+	notes := filepath.Join(t.TempDir(), "birthday-answers.md")
+	s := newServer(t, onTheDay, "Chihiro", func(c *config.Config) {
+		withChatAndPIN(c)
+		c.ChatNotesPath = notes
+	})
+	s.friend = (&stubFriend{reply: []string{"Lovely!"}}).run
+	h := s.Handler()
+
+	postChat(t, h, `{"pin":"000000","messages":[{"from":"me","text":"not noted"}]}`)
+	postChat(t, h, `{"pin":"482916","messages":[{"from":"me","text":"hi"}]}`)
+	// The friend's reply failed: her answer is noted all the same.
+	s.friend = (&stubFriend{err: errFriendAway}).run
+	postChat(t, h, `{"pin":"482916","messages":[{"from":"me","text":"hi"},{"from":"friend","text":"What makes you laugh?\nBe honest"},{"from":"me","text":"Cats falling off sofas"}]}`)
+
+	b, err := os.ReadFile(notes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "## Monday, July 20, 2026, 10:00\n\n**Chihiro:** hi\n\n" +
+		"## Monday, July 20, 2026, 10:00\n\n> **Sunny:** What makes you laugh?\n> Be honest\n\n**Chihiro:** Cats falling off sofas\n\n"
+	if string(b) != want {
+		t.Errorf("notes =\n%s\nwant\n%s", b, want)
+	}
+	if rec := postChat(t, h, `{"pin":"482916","messages":[]}`); strings.Contains(rec.Body.String(), "sofas") {
+		t.Error("the notes show on the page")
+	}
+}
+
+func TestFriendGetsToKnowThemGently(t *testing.T) {
+	s := newServer(t, time.Date(2026, time.July, 20, 8, 0, 0, 0, time.UTC), "Chihiro", withChat)
+	p := s.friendSystemPrompt()
+	for _, want := range []string{"Getting to know Chihiro", "Never pry", "one light, open question", "the friend who made this page can read it"} {
+		if !strings.Contains(p, want) {
+			t.Errorf("system prompt lacks %q", want)
+		}
+	}
+}

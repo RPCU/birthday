@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/signal"
 	"syscall"
 	"time"
@@ -36,7 +37,8 @@ Commands:
 Configuration comes from BIRTHDAY_* environment variables, all optional:
 NAME (default "friend"), DATE (MM-DD or YYYY-MM-DD, default 01-01), MESSAGE,
 FROM, TEASER, SECRET, SECRET_PIN, SECRET_INTRO, OPEN_DAYS, TIMEZONE,
-HALLOWEEN, HOST and PORT. See the README.
+HALLOWEEN, CHAT, CHAT_NAME, CHAT_PROMPT, CHAT_MODEL, CHAT_COMMAND, HOST and
+PORT. See the README.
 `
 
 // Execute runs the command named by args and returns the process exit code.
@@ -89,6 +91,11 @@ func serve() int {
 
 	errCh := make(chan error, 1)
 	go func() { errCh <- httpServer.ListenAndServe() }()
+	if cfg.Chat {
+		if _, err := exec.LookPath(cfg.ChatCommand); err != nil {
+			logger.Warn("BIRTHDAY_CHAT is on but Claude Code was not found, the chat friend won't answer", "command", cfg.ChatCommand)
+		}
+	}
 	if cfg.DateDefaulted {
 		logger.Warn("BIRTHDAY_DATE is unset, counting down to the default date", "date", config.DefaultDate)
 	}

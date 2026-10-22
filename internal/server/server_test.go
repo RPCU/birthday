@@ -21,6 +21,11 @@ func newTestServer(t *testing.T, now time.Time, name string) http.Handler {
 
 func newTestServerWith(t *testing.T, now time.Time, name string, tweak func(*config.Config)) http.Handler {
 	t.Helper()
+	return newServer(t, now, name, tweak).Handler()
+}
+
+func newServer(t *testing.T, now time.Time, name string, tweak func(*config.Config)) *Server {
+	t.Helper()
 	paris, err := time.LoadLocation("Europe/Paris")
 	if err != nil {
 		t.Fatal(err)
@@ -41,7 +46,7 @@ func newTestServerWith(t *testing.T, now time.Time, name string, tweak func(*con
 		t.Fatal(err)
 	}
 	s.now = func() time.Time { return now }
-	return s.Handler()
+	return s
 }
 
 func get(t *testing.T, h http.Handler, path string) *httptest.ResponseRecorder {

@@ -122,3 +122,37 @@ func TestLoadReportsEveryError(t *testing.T) {
 		}
 	}
 }
+
+func TestLoadChat(t *testing.T) {
+	cfg, err := Load(env(map[string]string{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Chat || cfg.ChatName != DefaultChatName || cfg.ChatModel != DefaultChatModel || cfg.ChatCommand != DefaultChatCommand {
+		t.Errorf("chat defaults: %+v", cfg)
+	}
+
+	cfg, err = Load(env(map[string]string{
+		"BIRTHDAY_CHAT":        "true",
+		"BIRTHDAY_CHAT_NAME":   " Pip ",
+		"BIRTHDAY_CHAT_PROMPT": "Loves puns.",
+		"BIRTHDAY_CHAT_MODEL":  "opus",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cfg.Chat || cfg.ChatName != "Pip" || cfg.ChatPrompt != "Loves puns." || cfg.ChatModel != "opus" {
+		t.Errorf("chat settings: %+v", cfg)
+	}
+
+	_, err = Load(env(map[string]string{
+		"BIRTHDAY_CHAT":        "maybe",
+		"BIRTHDAY_CHAT_PROMPT": strings.Repeat("a", maxPromptLen+1),
+		"BIRTHDAY_CHAT_MODEL":  "--dangerously-skip-permissions",
+	}))
+	for _, want := range []string{"BIRTHDAY_CHAT ", "BIRTHDAY_CHAT_PROMPT", "BIRTHDAY_CHAT_MODEL"} {
+		if err == nil || !strings.Contains(err.Error(), want) {
+			t.Errorf("error %v does not mention %s", err, want)
+		}
+	}
+}

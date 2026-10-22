@@ -482,6 +482,222 @@ body {
     border-bottom: 1px solid currentColor;
 }
 
+/* The chat friend: a little conversation tucked into the card, above the
+   extra. */
+.chat {
+    margin-top: 1.1rem;
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+    background: color-mix(in srgb, var(--paper) 55%, var(--card));
+    overflow: hidden;
+}
+
+.chat-head {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.65rem 0.85rem;
+    border-bottom: 1px solid var(--line);
+    background: var(--card);
+}
+
+.chat-avatar {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 2.1rem;
+    height: 2.1rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--blush), var(--butter));
+    color: var(--ink);
+    font: 600 1rem/1 var(--serif);
+}
+
+.chat-who {
+    min-width: 0;
+}
+
+.chat-name {
+    margin: 0;
+    font-family: var(--serif);
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.chat-status {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+}
+
+.chat-dot {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: #6fbf73;
+}
+
+.chat.is-locked .chat-dot {
+    background: var(--muted);
+}
+
+.chat-log {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    max-height: min(22rem, 50vh);
+    margin: 0;
+    padding: 0.85rem;
+    list-style: none;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.chat-msg {
+    max-width: 85%;
+    padding: 0.5rem 0.8rem;
+    border-radius: 1rem;
+    font-size: 0.92rem;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    animation: pop 0.25s ease-out both;
+}
+
+.chat-msg.from-friend {
+    align-self: flex-start;
+    border-bottom-left-radius: 0.3rem;
+    background: var(--card);
+    border: 1px solid var(--line);
+}
+
+.chat-msg.from-me {
+    align-self: flex-end;
+    border-bottom-right-radius: 0.3rem;
+    background: var(--rose);
+    color: #fff;
+}
+
+.chat-msg.is-note {
+    align-self: center;
+    max-width: 100%;
+    padding: 0.2rem 0.5rem;
+    background: none;
+    border: 0;
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-style: italic;
+    text-align: center;
+}
+
+/* Three bouncing dots while the friend types. */
+.chat-msg.is-typing {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.7rem 0.85rem;
+}
+
+.chat-msg.is-typing span {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: var(--muted);
+    animation: typing 1.2s ease-in-out infinite;
+}
+
+.chat-msg.is-typing span:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+.chat-msg.is-typing span:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.chat-lock {
+    margin: 0;
+    padding: 0.85rem;
+    color: var(--muted);
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+}
+
+.chat .chat-pin {
+    padding: 0.85rem 0.85rem 0.4rem;
+}
+
+.chat-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    padding: 0.6rem;
+    border-top: 1px solid var(--line);
+    background: var(--card);
+}
+
+.chat-form[hidden] {
+    display: none;
+}
+
+.chat-form textarea {
+    flex: 1;
+    min-width: 0;
+    max-height: 7.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+    background: var(--paper);
+    color: var(--ink);
+    font: 0.92rem/1.4 var(--sans);
+    resize: none;
+}
+
+.chat-form textarea:focus-visible,
+.chat-form button:focus-visible {
+    outline: 2px solid var(--rose);
+    outline-offset: 2px;
+}
+
+.chat-form button {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 2.35rem;
+    height: 2.35rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--rose);
+    appearance: none;
+    cursor: pointer;
+}
+
+.chat-form button svg {
+    width: 1.1rem;
+    height: 1.1rem;
+    fill: #fff;
+}
+
+.chat-form button:disabled {
+    opacity: 0.55;
+    cursor: wait;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
 /* The line unveils when the card appears. */
 .is-open .iou-line {
     animation: unveil 1.4s 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
@@ -518,6 +734,24 @@ body {
 
 .glass.cheers {
     animation: clink 0.6s ease-in-out;
+}
+
+/* With the chat the card grows tall: the glass stays beside the line. */
+.iou:has(.chat) {
+    width: min(36rem, 100%);
+}
+
+.iou-body:has(.chat) .glass {
+    top: 1.25rem;
+    transform: rotate(8deg);
+}
+
+.iou-body:has(.chat) .glass:hover {
+    transform: rotate(-4deg);
+}
+
+.iou-body:has(.chat) .glass.cheers {
+    animation-name: clink-inline;
 }
 
 .glass svg {
@@ -756,6 +990,16 @@ body {
 @keyframes unveil {
     from { opacity: 0; filter: blur(10px); letter-spacing: 0.08em; }
     to { opacity: 1; filter: none; letter-spacing: normal; }
+}
+
+@keyframes pop {
+    from { opacity: 0; transform: translateY(4px) scale(0.98); }
+    to { opacity: 1; transform: none; }
+}
+
+@keyframes typing {
+    0%, 60%, 100% { transform: none; opacity: 0.5; }
+    30% { transform: translateY(-3px); opacity: 1; }
 }
 
 @keyframes clink-inline {

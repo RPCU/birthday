@@ -76,23 +76,43 @@ func writeJSONError(w http.ResponseWriter, code int, msg string) {
 // recipient, so a global budget is enough to make PIN guessing slow and can't
 // be dodged by spoofing client addresses.
 type limiter struct {
+	burst, perMinute float64
+
 	mu     sync.Mutex
 	tokens float64
 	last   time.Time
 }
 
+func newLimiter(burst, perMinute float64) *limiter {
+	return &limiter{burst: burst, perMinute: perMinute}
+}
+
+// allow takes a token if one is left.
 func (l *limiter) allow(now time.Time) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	if l.last.IsZero() {
-		l.tokens = pinBurst
-	} else {
-		l.tokens = min(pinBurst, l.tokens+now.Sub(l.last).Minutes()*pinPerMinute)
-	}
-	l.last = now
+	l.refill(now)
 	if l.tokens < 1 {
 		return false
 	}
 	l.tokens--
 	return true
+}
+
+// ready reports whether a token is left without taking it, so a right PIN
+// costs nothing and only wrong ones drain the bucket.
+func (l *limiter) ready(now time.Time) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.refill(now)
+	return l.tokens >= 1
+}
+
+func (l *limiter) refill(now time.Time) {
+	if l.last.IsZero() {
+		l.tokens = l.burst
+	} else {
+		l.tokens = min(l.burst, l.tokens+now.Sub(l.last).Minutes()*l.perMinute)
+	}
+	l.last = now
 }

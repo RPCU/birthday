@@ -34,6 +34,7 @@ which the image ships.
 | `BIRTHDAY_CHAT`       | no       | `false`                      | Adds a chat with a cheerful friend to the opened card, above the secret (see [Chat friend](#chat-friend)). |
 | `BIRTHDAY_CHAT_NAME`  | no       | `Sunny`                      | The friend's name (max 64 characters).                                 |
 | `BIRTHDAY_CHAT_PROMPT` | no      |                              | More instructions on how the friend acts, added to the built-in cheerful persona (max 8000 characters). |
+| `BIRTHDAY_CHAT_GREETING` | no    | `Happy birthday, {name}! 🎂 …` | The friend's opening line; `{name}` becomes `BIRTHDAY_NAME` (max 600 characters). |
 | `BIRTHDAY_CHAT_FALLBACK` | no    | six cheerful birthday lines  | What the friend says, one line per reply in turn, when Claude can't answer; `{name}` becomes `BIRTHDAY_NAME` (one per line, max 50 lines of 280 characters). |
 | `BIRTHDAY_CHAT_HISTORY` | no     | `true`                       | Keep today's conversation (see [Chat friend](#chat-friend)).            |
 | `BIRTHDAY_CHAT_NOTES`   | no     | `true`                       | Keep their answers for you (see [Chat friend](#chat-friend)).           |

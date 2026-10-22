@@ -171,6 +171,20 @@ func TestLoadChatFallback(t *testing.T) {
 	}
 }
 
+func TestLoadChatGreeting(t *testing.T) {
+	cfg, err := Load(env(map[string]string{}))
+	if err != nil || cfg.ChatGreeting != DefaultChatGreeting {
+		t.Fatalf("default greeting: %v, %q", err, cfg.ChatGreeting)
+	}
+	cfg, err = Load(env(map[string]string{"BIRTHDAY_CHAT_GREETING": "  Bonjour {name} !  "}))
+	if err != nil || cfg.ChatGreeting != "Bonjour {name} !" {
+		t.Errorf("custom greeting: %v, %q", err, cfg.ChatGreeting)
+	}
+	if _, err := Load(env(map[string]string{"BIRTHDAY_CHAT_GREETING": strings.Repeat("a", maxGreeting+1)})); err == nil {
+		t.Error("an over-long greeting is accepted")
+	}
+}
+
 func TestLoadChatHistoryDir(t *testing.T) {
 	for _, c := range []struct {
 		env  map[string]string

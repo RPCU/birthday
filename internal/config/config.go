@@ -37,6 +37,10 @@ const DefaultSecretIntro = "And a little extra, just for you"
 // is unset.
 const DefaultChatName = "Sunny"
 
+// DefaultChatGreeting is the friend's opening line when BIRTHDAY_CHAT_GREETING
+// is unset. {name} becomes BIRTHDAY_NAME.
+const DefaultChatGreeting = "Happy birthday, {name}! 🎂 I’m so happy for you today. How are you celebrating?"
+
 // DefaultChatModel is the Claude model the chat friend runs on when
 // BIRTHDAY_CHAT_MODEL is unset.
 const DefaultChatModel = "sonnet"
@@ -75,6 +79,7 @@ const (
 	maxPINLen     = 12
 	maxPromptLen  = 8000
 	maxFallbacks  = 50
+	maxGreeting   = 600
 	maxBeforePIN  = 50
 )
 
@@ -122,6 +127,8 @@ type Config struct {
 	ChatPrompt  string
 	ChatModel   string
 	ChatCommand string
+	// ChatGreeting is the friend's opening line ({name} becomes Name).
+	ChatGreeting string
 	// ChatHistoryDir is where today's conversation is kept: next to the
 	// friend's Claude login ($CLAUDE_CONFIG_DIR/birthday-chat), so it shares
 	// its volume. Empty when BIRTHDAY_CHAT_HISTORY is false.
@@ -168,6 +175,8 @@ func Load(getenv func(string) string) (Config, error) {
 		ChatPrompt:  strings.TrimSpace(getenv("BIRTHDAY_CHAT_PROMPT")),
 		ChatModel:   valueOr(strings.TrimSpace(getenv("BIRTHDAY_CHAT_MODEL")), DefaultChatModel),
 		ChatCommand: valueOr(strings.TrimSpace(getenv("BIRTHDAY_CHAT_COMMAND")), DefaultChatCommand),
+
+		ChatGreeting: valueOr(strings.TrimSpace(getenv("BIRTHDAY_CHAT_GREETING")), DefaultChatGreeting),
 	}
 
 	var errs []error
@@ -205,6 +214,9 @@ func Load(getenv func(string) string) (Config, error) {
 	}
 	if utf8.RuneCountInString(cfg.ChatName) > maxNameLen {
 		errs = append(errs, fmt.Errorf("BIRTHDAY_CHAT_NAME: at most %d characters", maxNameLen))
+	}
+	if utf8.RuneCountInString(cfg.ChatGreeting) > maxGreeting {
+		errs = append(errs, fmt.Errorf("BIRTHDAY_CHAT_GREETING: at most %d characters", maxGreeting))
 	}
 	if keep, err := boolOr(getenv("BIRTHDAY_CHAT_HISTORY"), true); err != nil {
 		errs = append(errs, fmt.Errorf("BIRTHDAY_CHAT_HISTORY %q: want true or false", getenv("BIRTHDAY_CHAT_HISTORY")))

@@ -86,6 +86,19 @@ func (s *Server) saveChat(msgs []chatMessage, reply string) {
 	s.forgetOtherDays(dir, today)
 }
 
+// forgetChat removes today's conversation, for a fresh start.
+func (s *Server) forgetChat() {
+	dir := s.cfg.ChatHistoryDir
+	if dir == "" {
+		return
+	}
+	s.history.mu.Lock()
+	defer s.history.mu.Unlock()
+	if err := os.Remove(filepath.Join(dir, s.chatDay()+".json")); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		s.log.Warn("forget the chat", "error", err)
+	}
+}
+
 // forgetOtherDays removes every saved conversation but today's.
 func (s *Server) forgetOtherDays(dir, today string) {
 	entries, err := os.ReadDir(dir)

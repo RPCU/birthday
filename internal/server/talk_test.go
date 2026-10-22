@@ -53,6 +53,7 @@ func TestPINWaitsForTheChat(t *testing.T) {
 		`<form class="extra-pin" novalidate data-then="chat">`,
 		"Enter your PIN to chat with Sunny",
 		"chat is-locked",
+		`<button type="button" class="chat-new" hidden>New chat</button>`,
 		"3 more messages",
 	} {
 		if !strings.Contains(page, want) {

@@ -11,6 +11,7 @@
     --gold: #c8a24a;
     --butter: #f6e7b8;
     --pumpkin: #d08a52;
+    --sprout: #9aae6a;
     --shadow: 0 1px 2px rgba(59, 42, 63, 0.06), 0 12px 32px -12px rgba(59, 42, 63, 0.18);
 
     --serif: "Fraunces", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
@@ -32,6 +33,7 @@
         --gold: #e0c06e;
         --butter: #4a3e25;
         --pumpkin: #e3a06a;
+        --sprout: #8fa463;
         --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 16px 40px -16px rgba(0, 0, 0, 0.6);
     }
 }
@@ -1007,6 +1009,97 @@ body {
     35% { transform: rotate(-22deg); }
     65% { transform: rotate(10deg); }
     100% { transform: rotate(8deg); }
+}
+
+/* The secret's PIN waits for a few messages to the chat friend: a pumpkin
+   ripens with each one (--ripe, 0 to 1, set by the script). */
+.grow {
+    --ripe: 0;
+    --ripe-color: color-mix(in oklab, var(--pumpkin) calc(var(--ripe) * 100%), var(--sprout));
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+}
+
+.extra-pin[hidden] {
+    display: none;
+}
+
+.grow-pumpkin {
+    flex: none;
+    width: 4.5rem;
+    height: 4.5rem;
+    overflow: visible;
+    transform: scale(calc(0.4 + 0.6 * var(--ripe)));
+    transform-origin: 50% 100%;
+    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.grow-pumpkin.is-growing {
+    animation: wobble 0.6s ease-out;
+}
+
+.grow-body ellipse {
+    fill: var(--ripe-color);
+    stroke: color-mix(in oklab, var(--ripe-color) 70%, var(--ink));
+    stroke-width: 1.2;
+    transition: fill 0.6s ease;
+}
+
+.grow-body .grow-front {
+    fill: color-mix(in oklab, var(--ripe-color) 85%, white);
+}
+
+.grow-stem {
+    fill: #7a6a3a;
+}
+
+.grow-leaf {
+    fill: var(--sprout);
+}
+
+.grow-text {
+    min-width: 0;
+}
+
+.grow-steps {
+    display: flex;
+    gap: 0.35rem;
+    margin: 0 0 0.4rem;
+    padding: 0;
+    list-style: none;
+}
+
+.grow-steps li {
+    width: 0.55rem;
+    height: 0.55rem;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    transition: background 0.4s ease, border-color 0.4s ease;
+}
+
+.grow-steps li.is-done {
+    border-color: var(--pumpkin);
+    background: var(--pumpkin);
+}
+
+.grow-hint {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.85rem;
+    line-height: 1.45;
+}
+
+.grow.is-ripe .grow-hint {
+    color: var(--ink);
+}
+
+@keyframes wobble {
+    0% { rotate: 0deg; }
+    25% { rotate: -7deg; }
+    55% { rotate: 5deg; }
+    80% { rotate: -2deg; }
+    100% { rotate: 0deg; }
 }
 
 @media (prefers-reduced-motion: reduce) {

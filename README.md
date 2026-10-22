@@ -37,6 +37,7 @@ which the image ships.
 | `BIRTHDAY_CHAT_FALLBACK` | no    | six cheerful birthday lines  | What the friend says, one line per reply in turn, when Claude can't answer; `{name}` becomes `BIRTHDAY_NAME` (one per line, max 50 lines of 280 characters). |
 | `BIRTHDAY_CHAT_HISTORY` | no     | `true`                       | Keep today's conversation (see [Chat friend](#chat-friend)).            |
 | `BIRTHDAY_CHAT_NOTES`   | no     | `true`                       | Keep their answers for you (see [Chat friend](#chat-friend)).           |
+| `BIRTHDAY_CHAT_BEFORE_PIN` | no  | `5`                          | Messages to the friend before the secret's PIN opens (0 to 50).         |
 | `BIRTHDAY_CHAT_MODEL` | no       | `sonnet`                     | Claude model (`sonnet`, `opus`, `haiku` or a full model ID).           |
 | `BIRTHDAY_CHAT_COMMAND` | no     | `claude`                     | The Claude Code CLI.                                                   |
 | `BIRTHDAY_HOST`       | no       | all interfaces               | Listen address.                                                        |
@@ -66,6 +67,16 @@ their perfect day), never prying into relationships, health, money
 or anything private, and dropping whatever they dodge. It stays in character
 but won't deny being an AI if asked sincerely, nor that the page's maker can
 read the chat if asked.
+
+**Chat first, then the PIN.** With the chat, a secret and its PIN, the
+secret's PIN waits until they've sent the friend `BIRTHDAY_CHAT_BEFORE_PIN`
+messages (5; `0` asks for the PIN right away). The chat then opens without
+the PIN, and in place of the PIN form a pumpkin ripens with each message,
+with a dot per message and a hint at each step; once it's ripe, the PIN form
+shows. `POST /api/reveal` answers 409 until then (without costing a PIN
+try). The count lives next to the login (`$CLAUDE_CONFIG_DIR/birthday-talked`,
+shared by the replicas) and never resets. Without a secret, the PIN still
+guards the chat.
 
 **Their answers.** Every message they send is added, after the friend's line
 it answers, to `$CLAUDE_CONFIG_DIR/birthday-answers.md`, next to the login.

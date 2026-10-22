@@ -207,6 +207,52 @@
             body: JSON.stringify(body),
         });
 
+    // The secret's PIN can wait for a few messages to the chat friend: a
+    // pumpkin ripens with each one, with a hint along the way, and the PIN
+    // form shows once it's ripe. The server keeps the count.
+    const grow = document.querySelector(".grow");
+    let grew = () => {};
+    if (grow) {
+        const total = Number(grow.dataset.total);
+        let left = Number(grow.dataset.left);
+        const friend = grow.dataset.friend;
+        const pumpkin = grow.querySelector(".grow-pumpkin");
+        const steps = grow.querySelector(".grow-steps");
+        const hint = grow.querySelector(".grow-hint");
+        const hints = [
+            `Say hi to ${friend} 👋 Every message helps this little pumpkin grow, and your PIN is waiting inside.`,
+            `It's sprouting! Tell ${friend} how your day is going.`,
+            `${friend} would love to hear about your favourite things: flowers, music, food…`,
+            `Getting round! Ask ${friend} anything, or share what made you smile today.`,
+        ];
+        steps.replaceChildren(...Array.from({ length: total }, () => document.createElement("li")));
+
+        const show = () => {
+            const done = total - left;
+            grow.style.setProperty("--ripe", String(done / total));
+            [...steps.children].forEach((li, i) => li.classList.toggle("is-done", i < done));
+            grow.classList.toggle("is-ripe", left === 0);
+            if (left === 0) hint.textContent = "Ripe! 🎃 Your PIN can open the surprise now.";
+            else if (left === 1) hint.textContent = "Nearly ripe… one more message and it's ready 🎃";
+            else hint.textContent = hints[Math.min(done, hints.length - 1)];
+        };
+        show();
+
+        grew = () => {
+            if (left <= 0) return;
+            left--;
+            show();
+            pumpkin.classList.remove("is-growing");
+            void pumpkin.getBoundingClientRect();
+            pumpkin.classList.add("is-growing");
+            if (left > 0) return;
+            const r = pumpkin.getBoundingClientRect();
+            burst(r.left + r.width / 2, r.top, 50, 1.4);
+            const pinForm = grow.parentElement.querySelector(".extra-pin");
+            if (pinForm) pinForm.hidden = false;
+        };
+    }
+
     // The chat friend. The page sends the conversation with each message and
     // the server keeps today's: it comes back when the chat opens (after the
     // PIN, if any) and starts over every day.
@@ -285,6 +331,7 @@
             try {
                 // The latest messages are plenty of context (the server takes 60).
                 const res = await post("/api/chat", { pin: chatPIN, messages: history.slice(-50) });
+                if (res.ok) grew();
                 if (!res.ok) {
                     failed =
                         res.status === 429

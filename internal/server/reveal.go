@@ -38,6 +38,11 @@ func (s *Server) handleReveal(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+	if s.pinAfterChat() && s.messagesLeft() > 0 {
+		// Not a guess: costs no try.
+		writeJSONError(w, http.StatusConflict, "chat first")
+		return
+	}
 	if !s.pinTries.allow(s.now()) {
 		w.Header().Set("Retry-After", strconv.Itoa(60/pinPerMinute))
 		writeJSONError(w, http.StatusTooManyRequests, "too many tries")

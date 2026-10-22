@@ -15,6 +15,27 @@ func withChatBeforePIN(path string) func(*config.Config) {
 		withChatAndPIN(c)
 		c.ChatBeforePIN = 3
 		c.ChatTalkedPath = path
+		c.ChatCountReset = true
+	}
+}
+
+func TestCountCanStayReached(t *testing.T) {
+	onTheDay := time.Date(2026, time.July, 20, 8, 0, 0, 0, time.UTC)
+	s := newServer(t, onTheDay, "Chihiro", func(c *config.Config) {
+		withChatBeforePIN(filepath.Join(t.TempDir(), "birthday-talked"))(c)
+		c.ChatCountReset = false
+	})
+	s.friend = (&stubFriend{reply: []string{"Yay!"}}).run
+	h := s.Handler()
+	for range 3 {
+		postChat(t, h, `{"pin":"482916","messages":[{"from":"me","text":"hi"}]}`)
+	}
+	postChat(t, h, `{"pin":"482916","messages":[]}`)
+	if rec := reveal(t, h, `{"pin":"482916"}`); rec.Code != http.StatusOK {
+		t.Errorf("reveal on the next visit: status %d", rec.Code)
+	}
+	if page := get(t, h, "/").Body.String(); strings.Contains(page, `class="grow"`) {
+		t.Error("the pumpkin comes back")
 	}
 }
 
@@ -53,14 +74,24 @@ func TestPINWaitsForTheChat(t *testing.T) {
 	if rec := reveal(t, h, `{"pin":"482916"}`); rec.Code != http.StatusOK {
 		t.Errorf("reveal after 3 messages: status %d", rec.Code)
 	}
-	if page := get(t, h, "/").Body.String(); strings.Contains(page, `class="grow"`) || strings.Contains(page, "data-then") {
-		t.Error("the pumpkin is still in the way")
-	}
-
 	// Another replica (or a restart) reads the count off the volume.
 	other := newServer(t, onTheDay, "Chihiro", withChatBeforePIN(talked))
 	if left := other.messagesLeft(); left != 0 {
 		t.Errorf("another server has %d messages left", left)
+	}
+
+	// The next visit: the pumpkin again, and the PIN starts the count over.
+	if page := get(t, h, "/").Body.String(); !strings.Contains(page, `data-left="3"`) {
+		t.Error("the next visit skips the pumpkin")
+	}
+	if rec := postChat(t, h, `{"pin":"482916","messages":[]}`); rec.Code != http.StatusOK {
+		t.Fatalf("unlock: status %d", rec.Code)
+	}
+	if rec := reveal(t, h, `{"pin":"482916"}`); rec.Code != http.StatusConflict {
+		t.Errorf("reveal right after the PIN: status %d, want 409", rec.Code)
+	}
+	if left := other.messagesLeft(); left != 3 {
+		t.Errorf("another server has %d messages left after the reset, want 3", left)
 	}
 }
 

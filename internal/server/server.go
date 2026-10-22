@@ -202,7 +202,12 @@ func (s *Server) moment() moment {
 		} else {
 			locked = s.cfg.Secret != ""
 		}
-		if s.pinAfterChat() {
+		switch {
+		case !s.pinAfterChat():
+		case s.cfg.ChatCountReset:
+			// The PIN starts a fresh count every time.
+			waits = s.cfg.ChatBeforePIN
+		default:
 			waits = s.messagesLeft()
 		}
 		lastOpenDay = until.AddDate(0, 0, -1).Format("January 2")

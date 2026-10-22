@@ -1,6 +1,8 @@
 package server
 
 import (
+	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -23,8 +25,7 @@ func (s *Server) messagesLeft() int {
 
 // talkedLocked is how many messages count so far: the count kept next to the
 // login (cfg.ChatTalkedPath, shared by the replicas on its volume), or this
-// process's own without one. It never resets: once the PIN is open, it stays
-// open.
+// process's own without one.
 func (s *Server) talkedLocked() int {
 	n := s.talked
 	if p := s.cfg.ChatTalkedPath; p != "" {
@@ -35,6 +36,22 @@ func (s *Server) talkedLocked() int {
 		}
 	}
 	return n
+}
+
+// resetTalk starts the count over (cfg.ChatCountReset): every time the PIN
+// opens the chat, the secret waits for a fresh round of messages.
+func (s *Server) resetTalk() {
+	if !s.pinAfterChat() || !s.cfg.ChatCountReset {
+		return
+	}
+	s.talkMu.Lock()
+	defer s.talkMu.Unlock()
+	s.talked = 0
+	if p := s.cfg.ChatTalkedPath; p != "" {
+		if err := os.Remove(p); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			s.log.Warn("reset the chat count", "error", err)
+		}
+	}
 }
 
 // countTalk counts a message the birthday person sent, up to

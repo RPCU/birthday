@@ -223,6 +223,12 @@ func TestLoadChatBeforePIN(t *testing.T) {
 	if cfg, err := Load(env(map[string]string{"BIRTHDAY_CHAT_BEFORE_PIN": "0"})); err != nil || cfg.ChatBeforePIN != 0 {
 		t.Errorf("BIRTHDAY_CHAT_BEFORE_PIN=0: %d, %v", cfg.ChatBeforePIN, err)
 	}
+	if !cfg.ChatCountReset {
+		t.Error("BIRTHDAY_CHAT_COUNT_RESET is off by default")
+	}
+	if cfg, err := Load(env(map[string]string{"BIRTHDAY_CHAT_COUNT_RESET": "false"})); err != nil || cfg.ChatCountReset {
+		t.Errorf("BIRTHDAY_CHAT_COUNT_RESET=false: %v, %v", cfg.ChatCountReset, err)
+	}
 	for _, v := range []string{"-1", "51", "five"} {
 		if _, err := Load(env(map[string]string{"BIRTHDAY_CHAT_BEFORE_PIN": v})); err == nil {
 			t.Errorf("BIRTHDAY_CHAT_BEFORE_PIN=%s accepted", v)

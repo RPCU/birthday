@@ -829,6 +829,100 @@ body {
 .sky span:nth-child(7) { left: 86%; animation-duration: 20s; animation-delay: -1s; }
 .sky span:nth-child(8) { left: 94%; animation-delay: -13s; }
 
+/* The last ten days: bunting fills in from the middle (a pennant a day),
+   sparkles twinkle (one more a day) and a few confetti flecks drift by.
+   Kept faint and behind everything. */
+.bunting {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: min(40rem, 82vw);
+    translate: -50% 0;
+    overflow: visible;
+}
+
+.bunting-string {
+    fill: none;
+    stroke: var(--gold);
+    stroke-width: 1.5;
+    opacity: 0.55;
+}
+
+.pennant {
+    opacity: 0.7;
+    transform-box: fill-box;
+    transform-origin: 50% 0;
+    animation: sway 6s ease-in-out infinite;
+}
+
+g:nth-of-type(2n) > .pennant {
+    animation-delay: -3s;
+}
+
+g:nth-of-type(3n) > .pennant {
+    animation-duration: 7.5s;
+}
+
+.pennant-rose { fill: var(--rose); }
+.pennant-gold { fill: var(--gold); }
+.pennant-blush { fill: var(--blush); }
+.pennant-butter { fill: var(--butter); }
+
+.sparkles i {
+    position: absolute;
+    width: 0.7rem;
+    height: 0.7rem;
+    background: var(--gold);
+    clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+    opacity: 0;
+    animation: twinkle 5s ease-in-out infinite;
+}
+
+.sparkles i:nth-child(1) { top: 18%; left: 9%; }
+.sparkles i:nth-child(2) { top: 26%; right: 8%; animation-delay: -2.5s; }
+.sparkles i:nth-child(3) { top: 62%; left: 5%; animation-delay: -1.2s; }
+.sparkles i:nth-child(4) { top: 74%; right: 11%; animation-delay: -3.6s; }
+.sparkles i:nth-child(5) { top: 40%; left: 14%; animation-delay: -4.1s; scale: 0.7; }
+.sparkles i:nth-child(6) { top: 48%; right: 15%; animation-delay: -0.6s; scale: 0.7; }
+.sparkles i:nth-child(7) { top: 86%; left: 22%; animation-delay: -3.1s; }
+.sparkles i:nth-child(8) { top: 12%; right: 24%; animation-delay: -1.8s; scale: 0.6; }
+.sparkles i:nth-child(9) { top: 90%; right: 30%; animation-delay: -4.6s; scale: 0.8; }
+.sparkles i:nth-child(10) { top: 33%; left: 28%; animation-delay: -2.2s; scale: 0.6; }
+
+.fleck {
+    position: absolute;
+    top: -2rem;
+    width: 0.35rem;
+    height: 0.7rem;
+    border-radius: 1px;
+    background: var(--rose);
+    opacity: 0.5;
+    animation: fleck 21s linear infinite;
+}
+
+.fleck:nth-of-type(2n) { background: var(--gold); }
+.fleck:nth-of-type(1) { left: 14%; animation-delay: -4s; }
+.fleck:nth-of-type(2) { left: 83%; animation-duration: 25s; animation-delay: -13s; }
+.fleck:nth-of-type(3) { left: 38%; animation-duration: 23s; animation-delay: -8s; }
+.fleck:nth-of-type(4) { left: 67%; animation-delay: -17s; }
+.fleck:nth-of-type(5) { left: 52%; animation-duration: 27s; animation-delay: -1s; }
+
+@keyframes sway {
+    0%, 100% { rotate: -3deg; }
+    50% { rotate: 3deg; }
+}
+
+@keyframes twinkle {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 0.6; }
+}
+
+@keyframes fleck {
+    from { transform: translateY(0) translateX(0) rotate(0deg); }
+    50% { transform: translateY(55vh) translateX(1.2rem) rotate(200deg); }
+    to { transform: translateY(110vh) translateX(0) rotate(400deg); }
+}
+
 /* Halloween: a crescent moon, two bats and a corner cobweb, all kept faint. */
 .moon,
 .web,
@@ -1116,7 +1210,12 @@ body {
     }
 
     .sky span,
-    .bat {
+    .bat,
+    .fleck {
         display: none;
+    }
+
+    .sparkles i {
+        opacity: 0.45;
     }
 }

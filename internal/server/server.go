@@ -133,6 +133,10 @@ func (s *Server) Handler() http.Handler {
 	return s.recoverPanics(securityHeaders(s.logRequests(mux)))
 }
 
+// buildupDays is how long before the birthday the countdown page starts
+// to dress up.
+const buildupDays = 10
+
 // moment is everything the page and the JSON feed say about "now".
 type moment struct {
 	Name string `json:"name"`
@@ -161,13 +165,18 @@ type moment struct {
 	// Chat is set only while Open and the chat is on; ChatLocked means it
 	// needs the PIN first. SecretWaits is how many more messages to the
 	// friend the secret's PIN waits for, out of ChatBeforePIN.
-	Chat         bool   `json:"-"`
-	ChatLocked   bool   `json:"-"`
-	ChatName     string `json:"-"`
-	ChatInitial  string `json:"-"`
-	SecretWaits  int    `json:"-"`
-	ChatBefore   int    `json:"-"`
-	DaysLeft     int    `json:"-"`
+	Chat        bool   `json:"-"`
+	ChatLocked  bool   `json:"-"`
+	ChatName    string `json:"-"`
+	ChatInitial string `json:"-"`
+	SecretWaits int    `json:"-"`
+	ChatBefore  int    `json:"-"`
+	DaysLeft    int    `json:"-"`
+	// Buildup is the party building up over the last buildupDays before
+	// the birthday: 1 ten days before, up to 10 the day before, else 0.
+	// Flecks is how many slow confetti flecks drift by (half as many).
+	Buildup      int    `json:"-"`
+	Flecks       int    `json:"-"`
 	Halloween    bool   `json:"-"`
 	DateLabel    string `json:"-"`
 	LastOpenDay  string `json:"-"`
@@ -181,7 +190,10 @@ func (s *Server) moment() moment {
 	open, until := s.cfg.Birthday.Reveal(now, s.cfg.OpenDays)
 	var message, from, secret, lastOpenDay string
 	var locked, chat bool
-	var waits int
+	var waits, buildup int
+	if days := st.DaysUntil(now); !open && days >= 1 && days <= buildupDays {
+		buildup = buildupDays + 1 - days
+	}
 	if open {
 		chat = s.cfg.Chat
 		message, from = s.cfg.Message, s.cfg.From
@@ -218,6 +230,8 @@ func (s *Server) moment() moment {
 		SecretWaits:  waits,
 		ChatBefore:   s.cfg.ChatBeforePIN,
 		DaysLeft:     st.DaysUntil(now),
+		Buildup:      buildup,
+		Flecks:       buildup / 2,
 		Halloween:    s.cfg.Halloween,
 		DateLabel:    st.Start.Format("January 2"),
 		LastOpenDay:  lastOpenDay,

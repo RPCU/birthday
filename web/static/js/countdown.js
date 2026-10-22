@@ -200,8 +200,16 @@
     const extra = document.querySelector(".extra-code");
     if (extra) wireExtra(extra);
 
-    // The chat friend. The server keeps nothing, so the page sends the whole
-    // conversation with each message; it lasts until the page reloads.
+    const post = (url, body) =>
+        fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+        });
+
+    // The chat friend. The page sends the conversation with each message and
+    // the server keeps today's: it comes back when the chat opens (after the
+    // PIN, if any) and starts over every day.
     const chat = document.querySelector(".chat");
     let chatPIN = "";
     let unlockChat = () => {};
@@ -222,6 +230,21 @@
             return li;
         };
 
+        // Today's conversation so far, if the server kept one.
+        const restore = async () => {
+            try {
+                const res = await post("/api/chat", { pin: chatPIN, messages: [] });
+                if (!res.ok) return;
+                const { messages } = await res.json();
+                if (!messages || !messages.length || history.length > 1) return;
+                log.replaceChildren();
+                history.splice(0, history.length, ...messages);
+                for (const m of messages) bubble(m.from === "me" ? "from-me" : "from-friend", m.text);
+            } catch {
+                // Keep the fresh greeting.
+            }
+        };
+
         unlockChat = (pin) => {
             if (!chat.classList.contains("is-locked")) return;
             chatPIN = pin;
@@ -229,7 +252,9 @@
             chat.querySelector(".chat-lock, .chat-pin")?.remove();
             log.hidden = false;
             form.hidden = false;
+            restore();
         };
+        if (!chat.classList.contains("is-locked")) restore();
 
         const grow = () => {
             input.style.height = "auto";
@@ -258,11 +283,8 @@
             let said = "";
             let failed = "";
             try {
-                const res = await fetch("/api/chat", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ pin: chatPIN, messages: history }),
-                });
+                // The latest messages are plenty of context (the server takes 60).
+                const res = await post("/api/chat", { pin: chatPIN, messages: history.slice(-50) });
                 if (!res.ok) {
                     failed =
                         res.status === 429
@@ -355,13 +377,6 @@
             }
         });
     }
-
-    const post = (url, body) =>
-        fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-        });
 
     // PIN-guarded extra: the server only hands the secret over for the right
     // PIN, then it is shown already revealed. The same PIN unlocks the chat.

@@ -5,6 +5,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
@@ -115,6 +116,10 @@ type Config struct {
 	ChatPrompt  string
 	ChatModel   string
 	ChatCommand string
+	// ChatHistoryDir is where today's conversation is kept: next to the
+	// friend's Claude login ($CLAUDE_CONFIG_DIR/birthday-chat), so it shares
+	// its volume. Empty when BIRTHDAY_CHAT_HISTORY is false.
+	ChatHistoryDir string
 	// ChatFallback holds the friend's canned replies, used in turn when
 	// Claude can't answer.
 	ChatFallback []string
@@ -177,6 +182,11 @@ func Load(getenv func(string) string) (Config, error) {
 	if utf8.RuneCountInString(cfg.ChatName) > maxNameLen {
 		errs = append(errs, fmt.Errorf("BIRTHDAY_CHAT_NAME: at most %d characters", maxNameLen))
 	}
+	if keep, err := boolOr(getenv("BIRTHDAY_CHAT_HISTORY"), true); err != nil {
+		errs = append(errs, fmt.Errorf("BIRTHDAY_CHAT_HISTORY %q: want true or false", getenv("BIRTHDAY_CHAT_HISTORY")))
+	} else if keep {
+		cfg.ChatHistoryDir = chatHistoryDir(getenv)
+	}
 	cfg.ChatFallback = DefaultChatFallback
 	if v := strings.TrimSpace(getenv("BIRTHDAY_CHAT_FALLBACK")); v != "" {
 		cfg.ChatFallback = nil
@@ -233,6 +243,24 @@ func Load(getenv func(string) string) (Config, error) {
 		return Config{}, err
 	}
 	return cfg, nil
+}
+
+// chatHistoryDir is birthday-chat in Claude Code's config directory.
+func chatHistoryDir(getenv func(string) string) string {
+	if dir := getenv("CLAUDE_CONFIG_DIR"); dir != "" {
+		return filepath.Join(dir, "birthday-chat")
+	}
+	if home := getenv("HOME"); home != "" {
+		return filepath.Join(home, ".claude", "birthday-chat")
+	}
+	return ""
+}
+
+func boolOr(v string, fallback bool) (bool, error) {
+	if v == "" {
+		return fallback, nil
+	}
+	return strconv.ParseBool(v)
 }
 
 func valueOr(v, fallback string) string {

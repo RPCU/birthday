@@ -35,6 +35,7 @@ which the image ships.
 | `BIRTHDAY_CHAT_NAME`  | no       | `Sunny`                      | The friend's name (max 64 characters).                                 |
 | `BIRTHDAY_CHAT_PROMPT` | no      |                              | More instructions on how the friend acts, added to the built-in cheerful persona (max 8000 characters). |
 | `BIRTHDAY_CHAT_FALLBACK` | no    | six cheerful birthday lines  | What the friend says, one line per reply in turn, when Claude can't answer; `{name}` becomes `BIRTHDAY_NAME` (one per line, max 50 lines of 280 characters). |
+| `BIRTHDAY_CHAT_HISTORY` | no     | `true`                       | Keep today's conversation (see [Chat friend](#chat-friend)).            |
 | `BIRTHDAY_CHAT_MODEL` | no       | `sonnet`                     | Claude model (`sonnet`, `opus`, `haiku` or a full model ID).           |
 | `BIRTHDAY_CHAT_COMMAND` | no     | `claude`                     | The Claude Code CLI.                                                   |
 | `BIRTHDAY_HOST`       | no       | all interfaces               | Listen address.                                                        |
@@ -64,9 +65,14 @@ The friend is a blank slate, cut off from the account it runs on: every
 message runs a fresh `claude --print` in an empty directory with no tools, no
 MCP servers or claude.ai connectors, no plugins, skills, hooks, settings,
 `CLAUDE.md` or memory, no saved session, its own system prompt instead of
-Claude Code's, and none of the `BIRTHDAY_*` variables. The server keeps
-nothing either: the page sends the conversation with each message, and it
-ends with the page. Replies stream in; at most 2 at once and 6 a minute (12 in
+Claude Code's, and none of the `BIRTHDAY_*` variables. The page sends the
+conversation with each message (its last 50), and the server keeps today's
+in `$CLAUDE_CONFIG_DIR/birthday-chat/<date>.json`, next to the login, so it
+comes back on reload, on another device and on every replica sharing the
+volume. Only today's file (in `BIRTHDAY_TIMEZONE`) is read and the older ones
+are deleted, so it starts over every midnight. Reading it back is locked like
+the chat (open card, then the PIN). `BIRTHDAY_CHAT_HISTORY=false` keeps
+nothing. Replies stream in; at most 2 at once and 6 a minute (12 in
 a burst).
 
 **Signing in.** The image has Claude Code and a shell. Its login lives in
@@ -76,8 +82,8 @@ a burst).
 kubectl exec -it <pod> -- claude auth login
 ```
 
-Mount a volume on `/home/birthday/.claude` to keep that login across
-restarts (hestia's `persistent-volume` trait, `claude` instance, does it per
+Mount a volume on `/home/birthday/.claude` to keep that login (and today's
+conversation) across restarts (hestia's `persistent-volume` trait, `claude` instance, does it per
 environment); without one it lasts as long as the container. Either way it
 covers one replica. For
 something that survives restarts, set `CLAUDE_CODE_OAUTH_TOKEN` (from
@@ -95,7 +101,7 @@ and 2 CPUs (on 1 CPU it starts too slowly and gateways time out).
   `turning`, `now`, `open`, `openUntil`, …). `message` is only present while
   `open` is true.
 - `POST /api/reveal` (`{"pin": "…"}`): returns the PIN-guarded secret while the card is open; 403 on a wrong PIN, 429 when throttled, 404 when there's nothing to reveal.
-- `POST /api/chat` (`{"pin": "…", "messages": [{"from": "me"|"friend", "text": "…"}]}`): the friend's reply to the last message, streamed as JSON lines (`{"text"}`…, then `{"done": true}` or `{"error"}`), while the card is open and `BIRTHDAY_CHAT` is on; without messages it only checks the PIN (204). Wrong PINs count against `/api/reveal`'s budget.
+- `POST /api/chat` (`{"pin": "…", "messages": [{"from": "me"|"friend", "text": "…"}]}`): the friend's reply to the last message, streamed as JSON lines (`{"text"}`…, then `{"done": true}` or `{"error"}`), while the card is open and `BIRTHDAY_CHAT` is on; without messages it checks the PIN and returns today's conversation (`{"messages": […]}`). Wrong PINs count against `/api/reveal`'s budget.
 - `GET /healthz`: liveness/readiness probe.
 
 ## Development

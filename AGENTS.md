@@ -77,6 +77,9 @@ Use `devenv shell -- <cmd>`, which provides Go, gofumpt, golines and air.
   (`$CLAUDE_CONFIG_DIR/birthday-chat/<date>.json`, atomic writes: replicas
   share the volume), read back only through the PIN-checked
   `POST /api/chat` with no messages, and every other day's file is deleted.
+  Claude Code runs take turns (`turn.go`: an in-process slot plus a flock on
+  `$CLAUDE_CONFIG_DIR/birthday-claude.lock`, shared by replicas on the
+  volume): concurrent OAuth renewals revoke each other.
 - Before it unlocks, a teaser (`BIRTHDAY_TEASER`, gift box) stands in for
   the card. It must stay generic: never derive it from the message or the
   signature.

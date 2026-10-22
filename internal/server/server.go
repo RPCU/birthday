@@ -49,6 +49,9 @@ type Server struct {
 	awayUntil time.Time
 	typing    time.Duration
 	history   chatHistory
+	// claudeTurn lets one Claude Code run at a time in this process (see
+	// takeClaudeTurn).
+	claudeTurn chan struct{}
 	// now is swapped in tests.
 	now func() time.Time
 }
@@ -77,6 +80,7 @@ func New(cfg config.Config, log *slog.Logger) (*Server, error) {
 		chatTries:    newLimiter(chatBurst, chatPerMinute),
 		chatSlots:    make(chan struct{}, chatSlots),
 		typing:       fallbackTyping,
+		claudeTurn:   make(chan struct{}, 1),
 		now:          time.Now,
 	}
 	s.friend = s.claudeFriend

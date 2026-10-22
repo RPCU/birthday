@@ -271,6 +271,8 @@
         const send = form.querySelector("button");
         const friend = chat.dataset.friend;
         const history = [...log.querySelectorAll(".chat-msg")].map((li) => ({ from: "friend", text: li.textContent.trim() }));
+        const greeting = history.slice();
+        const fresh = chat.querySelector(".chat-new");
 
         const bubble = (cls, text) => {
             const li = document.createElement("li");
@@ -303,9 +305,40 @@
             chat.querySelector(".chat-lock, .chat-pin")?.remove();
             log.hidden = false;
             form.hidden = false;
+            fresh.hidden = false;
             restore();
         };
         if (!chat.classList.contains("is-locked")) restore();
+
+        // A new conversation, from the greeting. The server forgets today's;
+        // the pumpkin and the notes stay. A second tap confirms.
+        let armed = 0;
+        const disarm = () => {
+            clearTimeout(armed);
+            armed = 0;
+            fresh.textContent = "New chat";
+        };
+        fresh.addEventListener("click", async () => {
+            if (send.disabled) return;
+            if (!armed) {
+                fresh.textContent = "Start over?";
+                armed = setTimeout(disarm, 4000);
+                return;
+            }
+            disarm();
+            fresh.disabled = true;
+            try {
+                const res = await post("/api/chat", { pin: chatPIN, messages: [], fresh: true });
+                if (!res.ok) throw new Error(String(res.status));
+                log.replaceChildren();
+                history.splice(0, history.length, ...greeting);
+                for (const m of greeting) bubble("from-friend", m.text);
+                input.focus();
+            } catch {
+                bubble("is-note", "Couldn't start over. Try again in a moment.");
+            }
+            fresh.disabled = false;
+        });
 
         const grow = () => {
             input.style.height = "auto";
@@ -324,6 +357,8 @@
             const text = input.value.trim();
             if (!text || send.disabled) return;
             send.disabled = true;
+            fresh.disabled = true;
+            disarm();
             input.value = "";
             grow();
             bubble("from-me", text);
@@ -388,6 +423,7 @@
                 }
             }
             send.disabled = false;
+            fresh.disabled = false;
             input.focus();
         });
     }

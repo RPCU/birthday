@@ -47,6 +47,9 @@ type chatRequest struct {
 	// saves it with the reply as today's (see history.go). An empty list
 	// checks the PIN and returns today's conversation so far.
 	Messages []chatMessage `json:"messages"`
+	// Fresh, without messages, forgets today's conversation instead: the
+	// page's "New chat" button.
+	Fresh bool `json:"fresh"`
 }
 
 // chatEvent is one line of the streamed reply (application/x-ndjson).
@@ -92,6 +95,13 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 			writeJSONError(w, http.StatusForbidden, "wrong PIN")
 			return
 		}
+	}
+	if len(req.Messages) == 0 && req.Fresh {
+		// A new conversation; the count toward the secret and the notes stay.
+		s.forgetChat()
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(savedChat{Messages: []chatMessage{}})
+		return
 	}
 	if len(req.Messages) == 0 {
 		// The PIN is right (or not needed): today's conversation so far, and

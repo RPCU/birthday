@@ -110,7 +110,9 @@ comes back on reload, on another device and on every replica sharing the
 volume. Only today's file (in `BIRTHDAY_TIMEZONE`) is read and the older ones
 are deleted, so it starts over every midnight. Reading it back is locked like
 the chat (open card, then the PIN). `BIRTHDAY_CHAT_HISTORY=false` keeps
-nothing. Replies stream in, 6 a minute (12 in a burst). Claude Code runs one at a
+nothing. The chat's **New chat** button (tapped twice, to confirm) clears
+today's conversation and starts over from the greeting; the notes and the
+pumpkin's count stay. Replies stream in, 6 a minute (12 in a burst). Claude Code runs one at a
 time, taking turns on a lock file next to the login
 (`$CLAUDE_CONFIG_DIR/birthday-claude.lock`), so replicas sharing the volume
 never renew the login at once (two renewals at once can sign the friend out);
@@ -142,7 +144,7 @@ and 2 CPUs (on 1 CPU it starts too slowly and gateways time out).
   `turning`, `now`, `open`, `openUntil`, …). `message` is only present while
   `open` is true.
 - `POST /api/reveal` (`{"pin": "…"}`): returns the PIN-guarded secret while the card is open; 403 on a wrong PIN, 429 when throttled, 404 when there's nothing to reveal.
-- `POST /api/chat` (`{"pin": "…", "messages": [{"from": "me"|"friend", "text": "…"}]}`): the friend's reply to the last message, streamed as JSON lines (`{"text"}`…, then `{"done": true}` or `{"error"}`), while the card is open and `BIRTHDAY_CHAT` is on; without messages it checks the PIN and returns today's conversation (`{"messages": […]}`). Wrong PINs count against `/api/reveal`'s budget.
+- `POST /api/chat` (`{"pin": "…", "messages": [{"from": "me"|"friend", "text": "…"}]}`): the friend's reply to the last message, streamed as JSON lines (`{"text"}`…, then `{"done": true}` or `{"error"}`), while the card is open and `BIRTHDAY_CHAT` is on; without messages it checks the PIN and returns today's conversation (`{"messages": […]}`), or with `"fresh": true` forgets it. Wrong PINs count against `/api/reveal`'s budget.
 - `GET /healthz`: liveness/readiness probe.
 
 ## Development

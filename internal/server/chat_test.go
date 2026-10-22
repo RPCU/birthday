@@ -401,3 +401,35 @@ func TestFriendGetsToKnowThemGently(t *testing.T) {
 		}
 	}
 }
+
+func TestChatStartsOverOnRequest(t *testing.T) {
+	onTheDay := time.Date(2026, time.July, 20, 8, 0, 0, 0, time.UTC)
+	talked := filepath.Join(t.TempDir(), "birthday-talked")
+	notes := filepath.Join(t.TempDir(), "birthday-answers.md")
+	s := newServer(t, onTheDay, "Chihiro", func(c *config.Config) {
+		withChatBeforePIN(talked)(c)
+		c.ChatHistoryDir = t.TempDir()
+		c.ChatNotesPath = notes
+	})
+	s.friend = (&stubFriend{reply: []string{"Yay!"}}).run
+	h := s.Handler()
+	postChat(t, h, `{"pin":"482916","messages":[]}`)
+	postChat(t, h, `{"pin":"482916","messages":[{"from":"me","text":"hi"}]}`)
+
+	if rec := postChat(t, h, `{"pin":"000000","messages":[],"fresh":true}`); rec.Code != http.StatusForbidden {
+		t.Errorf("wrong PIN: status %d", rec.Code)
+	}
+	if rec := postChat(t, h, `{"pin":"482916","messages":[],"fresh":true}`); rec.Body.String() != "{\"messages\":[]}\n" {
+		t.Errorf("fresh start = %s", rec.Body)
+	}
+	// Only the conversation goes: the pumpkin and her answers stay.
+	if left := s.messagesLeft(); left != 2 {
+		t.Errorf("messages left after a new chat = %d, want 2", left)
+	}
+	if b, _ := os.ReadFile(notes); !strings.Contains(string(b), "hi") {
+		t.Error("the notes were cleared")
+	}
+	if rec := postChat(t, h, `{"pin":"482916","messages":[]}`); rec.Body.String() != "{\"messages\":[]}\n" {
+		t.Errorf("the old chat came back: %s", rec.Body)
+	}
+}

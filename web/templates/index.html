@@ -113,6 +113,7 @@
                             <p class="chat-name">{{.ChatName}}</p>
                             <p class="chat-status"><span class="chat-dot" aria-hidden="true"></span>here to celebrate you</p>
                         </div>
+                        <button type="button" class="chat-new"{{if .ChatLocked}} hidden{{end}}>New chat</button>
                     </header>
                     <ol class="chat-log" aria-live="polite"{{if .ChatLocked}} hidden{{end}}>
                         <li class="chat-msg from-friend">Happy birthday, {{.Name}}! 🎂 I’m so happy for you today. How are you celebrating?</li>

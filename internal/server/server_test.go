@@ -238,3 +238,22 @@ func TestHeadersAndRoutes(t *testing.T) {
 		t.Errorf("POST / = %d, want 405", rec.Code)
 	}
 }
+
+func TestBuildupGrowsOverTheLastTenDays(t *testing.T) {
+	for _, c := range []struct {
+		day                        int
+		pennants, sparkles, flecks int
+	}{
+		{9, 0, 0, 0},
+		{10, 1, 1, 0},
+		{15, 6, 6, 3},
+		{19, 10, 10, 5},
+		{20, 0, 0, 0}, // the day itself has its own party
+	} {
+		page := get(t, newTestServer(t, time.Date(2026, time.July, c.day, 12, 0, 0, 0, time.UTC), "Chihiro"), "/").Body.String()
+		got := [3]int{strings.Count(page, `class="pennant `), strings.Count(page, "<i></i>"), strings.Count(page, `class="fleck"`)}
+		if want := [3]int{c.pennants, c.sparkles, c.flecks}; got != want {
+			t.Errorf("July %d: pennants, sparkles, flecks = %v, want %v", c.day, got, want)
+		}
+	}
+}

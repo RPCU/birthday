@@ -49,6 +49,12 @@ and the server logs a warning. A 29 February birthday is celebrated on 28
 February in non-leap years. An invalid value stops the server at startup and
 lists every problem.
 
+Over the last ten days the countdown page dresses up, a little more each
+day: a bunting garland fills in from the middle (a pennant a day), gold
+sparkles twinkle (one more a day) and, from five days out, a few confetti
+flecks drift by. All of it stays faint and behind the countdown, and
+`prefers-reduced-motion` stills it.
+
 ## Chat friend
 
 With `BIRTHDAY_CHAT=true`, the opened card holds a little chat with

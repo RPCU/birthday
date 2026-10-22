@@ -22,6 +22,7 @@ func withChat(c *config.Config) {
 	c.ChatPrompt = testPrompt
 	c.ChatModel = config.DefaultChatModel
 	c.ChatCommand = config.DefaultChatCommand
+	c.ChatGreeting = config.DefaultChatGreeting
 	c.ChatFallback = config.DefaultChatFallback
 }
 
@@ -431,5 +432,20 @@ func TestChatStartsOverOnRequest(t *testing.T) {
 	}
 	if rec := postChat(t, h, `{"pin":"482916","messages":[]}`); rec.Body.String() != "{\"messages\":[]}\n" {
 		t.Errorf("the old chat came back: %s", rec.Body)
+	}
+}
+
+func TestChatGreeting(t *testing.T) {
+	onTheDay := time.Date(2026, time.July, 20, 8, 0, 0, 0, time.UTC)
+	h, _ := chatServer(t, onTheDay, withChat)
+	if page := get(t, h, "/").Body.String(); !strings.Contains(page, `from-friend">Happy birthday, Chihiro! 🎂`) {
+		t.Error("page lacks the default greeting")
+	}
+	h, _ = chatServer(t, onTheDay, func(c *config.Config) {
+		withChat(c)
+		c.ChatGreeting = "Hi {name}! I can also teach you a LinkedIn trick 💼"
+	})
+	if page := get(t, h, "/").Body.String(); !strings.Contains(page, `from-friend">Hi Chihiro! I can also teach you a LinkedIn trick 💼</li>`) {
+		t.Error("page lacks the custom greeting")
 	}
 }

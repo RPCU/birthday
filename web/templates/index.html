@@ -116,7 +116,7 @@
                         <button type="button" class="chat-new"{{if .ChatLocked}} hidden{{end}}>New chat</button>
                     </header>
                     <ol class="chat-log" aria-live="polite"{{if .ChatLocked}} hidden{{end}}>
-                        <li class="chat-msg from-friend">Happy birthday, {{.Name}}! 🎂 I’m so happy for you today. How are you celebrating?</li>
+                        <li class="chat-msg from-friend">{{.ChatGreeting}}</li>
                     </ol>
                     {{if .ChatLocked}}{{if .SecretLocked}}
                     <p class="chat-lock">Enter your PIN below to chat with {{.ChatName}}</p>

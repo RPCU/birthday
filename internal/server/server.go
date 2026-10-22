@@ -172,9 +172,11 @@ type moment struct {
 	ChatLocked  bool   `json:"-"`
 	ChatName    string `json:"-"`
 	ChatInitial string `json:"-"`
-	SecretWaits int    `json:"-"`
-	ChatBefore  int    `json:"-"`
-	DaysLeft    int    `json:"-"`
+	// ChatGreeting is the friend's opening line, with the name filled in.
+	ChatGreeting string `json:"-"`
+	SecretWaits  int    `json:"-"`
+	ChatBefore   int    `json:"-"`
+	DaysLeft     int    `json:"-"`
 	// Buildup is the party building up over the last buildupDays before
 	// the birthday: 1 ten days before, up to 10 the day before, and all of
 	// it while Open. Flecks is how many slow confetti flecks drift by (half
@@ -242,6 +244,7 @@ func (s *Server) moment() moment {
 		ChatLocked:   chat && s.cfg.SecretPIN != "",
 		ChatName:     s.cfg.ChatName,
 		ChatInitial:  initial(s.cfg.ChatName),
+		ChatGreeting: strings.ReplaceAll(s.cfg.ChatGreeting, "{name}", s.cfg.Name),
 		SecretWaits:  waits,
 		ChatBefore:   s.cfg.ChatBeforePIN,
 		DaysLeft:     st.DaysUntil(now),

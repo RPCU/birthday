@@ -76,14 +76,17 @@ a burst).
 kubectl exec -it <pod> -- claude auth login
 ```
 
-That login lasts as long as the container (mount a volume on
-`/home/birthday/.claude` to keep it) and covers that one replica. For
+Mount a volume on `/home/birthday/.claude` to keep that login across
+restarts (hestia's `persistent-volume` trait, `claude` instance, does it per
+environment); without one it lasts as long as the container. Either way it
+covers one replica. For
 something that survives restarts, set `CLAUDE_CODE_OAUTH_TOKEN` (from
 `claude setup-token`) from a secret instead. Until it's signed in (or when
 Claude Code is missing or out of usage), the friend still answers, with the
 `BIRTHDAY_CHAT_FALLBACK` lines in turn after a short "typing" pause, and the
 server logs a warning; Claude is tried again a minute later. Each reply runs a Claude Code
-process of about 250 MiB, two at most at once: give the container ~640 MiB.
+process of about 250 MiB, two at most at once: give the container ~640 MiB
+and 2 CPUs (on 1 CPU it starts too slowly and gateways time out).
 
 ## Endpoints
 

@@ -82,7 +82,7 @@ right away). Meanwhile a pumpkin ripens with each message, with a dot per
 message and a hint at each step; once it's ripe, the secret shows by itself
 (the same PIN). `POST /api/reveal` answers 409 until then (without costing a
 PIN try). The count starts over every time the PIN opens the chat (so on
-every visit); with `BIRTHDAY_CHAT_COUNT_RESET=false` it never resets, and
+every visit) and every time the secret is revealed; with `BIRTHDAY_CHAT_COUNT_RESET=false` it never resets, and
 once reached the PIN reveals the secret right away. It lives next to the
 login (`$CLAUDE_CONFIG_DIR/birthday-talked`, shared by the replicas).
 

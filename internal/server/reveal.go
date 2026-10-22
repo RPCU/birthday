@@ -61,6 +61,9 @@ func (s *Server) handleReveal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Each reveal spends the messages that earned it: the next one needs a
+	// fresh round (unless BIRTHDAY_CHAT_COUNT_RESET is off).
+	s.resetTalk()
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(revealResponse{Secret: s.cfg.Secret, Link: isLink(s.cfg.Secret)})
 }

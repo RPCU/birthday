@@ -15,7 +15,8 @@ Guidance for AI agents and contributors working in this repository.
 Birthday is a one-page Go web app: a countdown to `BIRTHDAY_DATE` for
 `BIRTHDAY_NAME`, an I.O.U. card showing `BIRTHDAY_MESSAGE` (default
 "I owe you a birthday drink"), and a celebration state on the day itself.
-There is no auth and no storage. Everything is read from the environment.
+There is no auth. Everything is read from the environment; the only thing
+written is the chat friend's conversation of the day (`history.go`).
 
 Module path: `github.com/Banh-Canh/birthday`.
 
@@ -72,6 +73,10 @@ Use `devenv shell -- <cmd>`, which provides Go, gofumpt, golines and air.
   environment. Never put the secret or the PIN in its prompt. Claude failures
   (not signed in, missing, limits) log at Warn, and the friend answers with
   the canned `BIRTHDAY_CHAT_FALLBACK` lines instead for a minute (`awayFor`).
+  Today's conversation is saved next to the login
+  (`$CLAUDE_CONFIG_DIR/birthday-chat/<date>.json`, atomic writes: replicas
+  share the volume), read back only through the PIN-checked
+  `POST /api/chat` with no messages, and every other day's file is deleted.
 - Before it unlocks, a teaser (`BIRTHDAY_TEASER`, gift box) stands in for
   the card. It must stay generic: never derive it from the message or the
   signature.

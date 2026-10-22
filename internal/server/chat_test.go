@@ -196,8 +196,8 @@ func TestPINGuardsTheChat(t *testing.T) {
 	if rec := postChat(t, h, `{"pin":"000000","messages":[{"from":"me","text":"hi"}]}`); rec.Code != http.StatusForbidden || f.prompt != "" {
 		t.Errorf("wrong PIN: status %d, want 403 and no friend", rec.Code)
 	}
-	if rec := postChat(t, h, `{"pin":"482916","messages":[]}`); rec.Code != http.StatusNoContent {
-		t.Errorf("PIN check: status %d, want 204", rec.Code)
+	if rec := postChat(t, h, `{"pin":"482916","messages":[]}`); rec.Code != http.StatusOK || rec.Body.String() != "{\"messages\":[]}\n" {
+		t.Errorf("PIN check: status %d, body %q, want 200 and no saved chat", rec.Code, rec.Body)
 	}
 	if rec := postChat(t, h, `{"pin":"482916","messages":[{"from":"me","text":"hi"}]}`); rec.Code != http.StatusOK || f.prompt != "hi" {
 		t.Errorf("right PIN: status %d, prompt %q", rec.Code, f.prompt)
@@ -307,5 +307,56 @@ func TestClaudeFriendNotLoggedIn(t *testing.T) {
 	})
 	if err := s.claudeFriend(context.Background(), "", "hi", func(string) {}); !errors.Is(err, errFriendAway) {
 		t.Errorf("err = %v, want errFriendAway", err)
+	}
+}
+
+func TestChatKeepsTodaysConversation(t *testing.T) {
+	onTheDay := time.Date(2026, time.July, 20, 8, 0, 0, 0, time.UTC)
+	dir := t.TempDir()
+	s := newServer(t, onTheDay, "Chihiro", func(c *config.Config) {
+		withChatAndPIN(c)
+		c.ChatHistoryDir = dir
+	})
+	s.friend = (&stubFriend{reply: []string{"Yay ", "you!"}}).run
+	h := s.Handler()
+	stale := filepath.Join(dir, "2026-07-19.json")
+	if err := os.WriteFile(stale, []byte(`{"messages":[]}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	if rec := postChat(t, h, `{"pin":"482916","messages":[{"from":"friend","text":"Happy birthday!"},{"from":"me","text":"thanks"}]}`); rec.Code != http.StatusOK {
+		t.Fatalf("chat: status %d", rec.Code)
+	}
+	if _, err := os.Stat(stale); !os.IsNotExist(err) {
+		t.Error("yesterday's chat is still there")
+	}
+
+	want := `{"messages":[{"from":"friend","text":"Happy birthday!"},{"from":"me","text":"thanks"},{"from":"friend","text":"Yay you!"}]}` + "\n"
+	if rec := postChat(t, h, `{"pin":"482916","messages":[]}`); rec.Body.String() != want {
+		t.Errorf("saved chat = %s, want %s", rec.Body, want)
+	}
+	if rec := postChat(t, h, `{"pin":"000000","messages":[]}`); rec.Code != http.StatusForbidden || strings.Contains(rec.Body.String(), "Yay") {
+		t.Errorf("wrong PIN reads the chat: status %d", rec.Code)
+	}
+
+	// Midnight in Paris: a fresh start.
+	s.now = func() time.Time { return time.Date(2026, time.July, 20, 22, 0, 0, 0, time.UTC) }
+	if rec := postChat(t, h, `{"pin":"482916","messages":[]}`); rec.Body.String() != "{\"messages\":[]}\n" {
+		t.Errorf("the next day still shows %s", rec.Body)
+	}
+}
+
+func TestChatSavesCannedReplies(t *testing.T) {
+	onTheDay := time.Date(2026, time.July, 20, 8, 0, 0, 0, time.UTC)
+	s := newServer(t, onTheDay, "Chihiro", func(c *config.Config) {
+		withChat(c)
+		c.ChatHistoryDir = t.TempDir()
+	})
+	s.friend = (&stubFriend{err: errFriendAway}).run
+	h := s.Handler()
+	postChat(t, h, `{"messages":[{"from":"me","text":"hi"}]}`)
+	first := strings.ReplaceAll(config.DefaultChatFallback[0], "{name}", "Chihiro")
+	if rec := postChat(t, h, `{"messages":[]}`); !strings.Contains(rec.Body.String(), first) {
+		t.Errorf("saved chat %s lacks the canned reply", rec.Body)
 	}
 }

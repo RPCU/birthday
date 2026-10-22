@@ -43,8 +43,9 @@ type chatMessage struct {
 
 type chatRequest struct {
 	PIN string `json:"pin"`
-	// Messages is the whole conversation, ending with the new message. The
-	// server keeps nothing: an empty list only checks the PIN.
+	// Messages is the conversation, ending with the new message; the server
+	// saves it with the reply as today's (see history.go). An empty list
+	// checks the PIN and returns today's conversation so far.
 	Messages []chatMessage `json:"messages"`
 }
 
@@ -93,7 +94,9 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if len(req.Messages) == 0 {
-		w.WriteHeader(http.StatusNoContent)
+		// The PIN is right (or not needed): today's conversation so far.
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(savedChat{Messages: append([]chatMessage{}, s.loadChat()...)})
 		return
 	}
 	if err := validChat(req.Messages); err != nil {
@@ -131,19 +134,20 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 
 	// Claude couldn't answer a moment ago: don't make them wait for it again.
 	if s.friendAway() {
-		s.fallback(r.Context(), req.Messages, send)
+		s.saveChat(req.Messages, s.fallback(r.Context(), req.Messages, send))
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), chatTimeout)
 	defer cancel()
-	said := false
+	var reply strings.Builder
 	err := s.friend(ctx, s.friendSystemPrompt(), s.friendPrompt(req.Messages), func(text string) {
-		said = true
+		reply.WriteString(text)
 		send(chatEvent{Text: text})
 	})
 	switch {
 	case err == nil:
 		send(chatEvent{Done: true})
+		s.saveChat(req.Messages, reply.String())
 	case r.Context().Err() != nil:
 		// The page went away or stopped the reply: nobody to tell.
 	default:
@@ -151,12 +155,12 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 			s.log.Warn("chat friend failed", "error", err)
 		}
 		s.markAway()
-		if said {
+		if reply.Len() > 0 {
 			// Cut off mid-reply: a canned line wouldn't follow on.
 			send(chatEvent{Error: "away"})
 			return
 		}
-		s.fallback(r.Context(), req.Messages, send)
+		s.saveChat(req.Messages, s.fallback(r.Context(), req.Messages, send))
 	}
 }
 
@@ -174,12 +178,13 @@ func (s *Server) markAway() {
 }
 
 // fallback answers with the next canned line (BIRTHDAY_CHAT_FALLBACK) after
-// a short pause, as if typed: the friend stays cheerful without Claude.
-func (s *Server) fallback(ctx context.Context, msgs []chatMessage, send func(chatEvent)) {
+// a short pause, as if typed: the friend stays cheerful without Claude. It
+// returns the line, or "" when there was none to send.
+func (s *Server) fallback(ctx context.Context, msgs []chatMessage, send func(chatEvent)) string {
 	lines := s.cfg.ChatFallback
 	if len(lines) == 0 {
 		send(chatEvent{Error: "away"})
-		return
+		return ""
 	}
 	turn := 0
 	for _, m := range msgs {
@@ -189,12 +194,13 @@ func (s *Server) fallback(ctx context.Context, msgs []chatMessage, send func(cha
 	}
 	select {
 	case <-ctx.Done():
-		return
+		return ""
 	case <-time.After(s.typing):
 	}
 	line := strings.ReplaceAll(lines[(turn-1)%len(lines)], "{name}", s.cfg.Name)
 	send(chatEvent{Text: line})
 	send(chatEvent{Done: true})
+	return line
 }
 
 func validChat(msgs []chatMessage) error {

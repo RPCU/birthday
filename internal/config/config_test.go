@@ -170,3 +170,22 @@ func TestLoadChatFallback(t *testing.T) {
 		t.Error("an over-long fallback line is accepted")
 	}
 }
+
+func TestLoadChatHistoryDir(t *testing.T) {
+	for _, c := range []struct {
+		env  map[string]string
+		want string
+	}{
+		{map[string]string{"CLAUDE_CONFIG_DIR": "/home/birthday/.claude"}, "/home/birthday/.claude/birthday-chat"},
+		{map[string]string{"HOME": "/home/me"}, "/home/me/.claude/birthday-chat"},
+		{map[string]string{"CLAUDE_CONFIG_DIR": "/c", "BIRTHDAY_CHAT_HISTORY": "false"}, ""},
+	} {
+		cfg, err := Load(env(c.env))
+		if err != nil || cfg.ChatHistoryDir != c.want {
+			t.Errorf("%v: ChatHistoryDir = %q, %v, want %q", c.env, cfg.ChatHistoryDir, err, c.want)
+		}
+	}
+	if _, err := Load(env(map[string]string{"BIRTHDAY_CHAT_HISTORY": "maybe"})); err == nil {
+		t.Error("BIRTHDAY_CHAT_HISTORY=maybe accepted")
+	}
+}

@@ -48,6 +48,7 @@ type Server struct {
 	awayMu    sync.Mutex
 	awayUntil time.Time
 	typing    time.Duration
+	history   chatHistory
 	// now is swapped in tests.
 	now func() time.Time
 }

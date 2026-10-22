@@ -79,7 +79,7 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 		writeJSONError(w, http.StatusBadRequest, "bad request")
 		return
 	}
-	if s.cfg.SecretPIN != "" {
+	if s.chatNeedsPIN() {
 		// Wrong PINs here drain the same bucket as /api/reveal.
 		if !s.pinTries.ready(s.now()) {
 			w.Header().Set("Retry-After", strconv.Itoa(60/pinPerMinute))
@@ -133,6 +133,7 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.noteAnswer(req.Messages)
+	s.countTalk()
 
 	// Claude couldn't answer a moment ago: don't make them wait for it again.
 	if s.friendAway() {
@@ -263,6 +264,10 @@ Getting to know %[1]s:
 - Never pry. Don't ask about past or present relationships, health, money, family troubles, work worries, where they live or anything private, and don't ask for contact details. If they bring something personal up, listen kindly without digging; if they dodge a question, let it go gracefully and don't come back to it.
 - Remember what they've told you in this chat and build on it, like someone who listens.
 `, name, friend)
+	if s.pinAfterChat() {
+		fmt.Fprintf(&b, "\nThe page's last surprise unlocks once %s has chatted with you for a few messages. ", name)
+		b.WriteString("If they ask, tell them playfully that it's a little game to get them talking; you don't know the surprise or the PIN.\n")
+	}
 	if s.cfg.ChatPrompt != "" {
 		b.WriteString("\nMore about how to act, from the friend who made this page:\n")
 		b.WriteString(s.cfg.ChatPrompt)

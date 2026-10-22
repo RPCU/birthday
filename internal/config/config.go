@@ -45,6 +45,11 @@ const DefaultChatModel = "sonnet"
 // unset.
 const DefaultChatCommand = "claude"
 
+// DefaultChatBeforePIN is how many messages the birthday person sends the
+// chat friend before the secret's PIN can be entered, when
+// BIRTHDAY_CHAT_BEFORE_PIN is unset.
+const DefaultChatBeforePIN = 5
+
 // DefaultChatFallback is what the chat friend says, in turn, when Claude
 // can't answer (not signed in, usage limits…) and BIRTHDAY_CHAT_FALLBACK is
 // unset. {name} becomes BIRTHDAY_NAME.
@@ -70,6 +75,7 @@ const (
 	maxPINLen     = 12
 	maxPromptLen  = 8000
 	maxFallbacks  = 50
+	maxBeforePIN  = 50
 )
 
 // Config is the validated application configuration.
@@ -129,6 +135,12 @@ type Config struct {
 	// answers: kept for the page's owner, never cleared nor shown on the
 	// page. Empty when BIRTHDAY_CHAT_NOTES is false.
 	ChatNotesPath string
+	// ChatBeforePIN is how many messages the birthday person must send the
+	// chat friend before the secret's PIN can be entered (0: right away). It
+	// applies with the chat, a secret and its PIN; the chat then opens
+	// without the PIN. ChatTalkedPath keeps the count next to the login.
+	ChatBeforePIN  int
+	ChatTalkedPath string
 	// ChatFallback holds the friend's canned replies, used in turn when
 	// Claude can't answer.
 	ChatFallback []string
@@ -203,6 +215,17 @@ func Load(getenv func(string) string) (Config, error) {
 		errs = append(errs, fmt.Errorf("BIRTHDAY_CHAT_NOTES %q: want true or false", getenv("BIRTHDAY_CHAT_NOTES")))
 	} else if keep && claudeDir(getenv) != "" {
 		cfg.ChatNotesPath = filepath.Join(claudeDir(getenv), "birthday-answers.md")
+	}
+	cfg.ChatBeforePIN = DefaultChatBeforePIN
+	if v := strings.TrimSpace(getenv("BIRTHDAY_CHAT_BEFORE_PIN")); v != "" {
+		if n, err := strconv.Atoi(v); err != nil || n < 0 || n > maxBeforePIN {
+			errs = append(errs, fmt.Errorf("BIRTHDAY_CHAT_BEFORE_PIN %q: want 0 to %d", v, maxBeforePIN))
+		} else {
+			cfg.ChatBeforePIN = n
+		}
+	}
+	if dir := claudeDir(getenv); dir != "" {
+		cfg.ChatTalkedPath = filepath.Join(dir, "birthday-talked")
 	}
 	cfg.ChatFallback = DefaultChatFallback
 	if v := strings.TrimSpace(getenv("BIRTHDAY_CHAT_FALLBACK")); v != "" {

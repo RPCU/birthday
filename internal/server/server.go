@@ -50,6 +50,10 @@ type Server struct {
 	typing    time.Duration
 	history   chatHistory
 	notes     sync.Mutex
+	// talked counts the birthday person's messages toward the PIN (see
+	// talk.go), with talkMu.
+	talkMu sync.Mutex
+	talked int
 	// claudeTurn lets one Claude Code run at a time in this process (see
 	// takeClaudeTurn).
 	claudeTurn chan struct{}
@@ -155,11 +159,14 @@ type moment struct {
 	SecretURL    bool   `json:"-"`
 	SecretIntro  string `json:"-"`
 	// Chat is set only while Open and the chat is on; ChatLocked means it
-	// needs the PIN first.
+	// needs the PIN first. SecretWaits is how many more messages to the
+	// friend the secret's PIN waits for, out of ChatBeforePIN.
 	Chat         bool   `json:"-"`
 	ChatLocked   bool   `json:"-"`
 	ChatName     string `json:"-"`
 	ChatInitial  string `json:"-"`
+	SecretWaits  int    `json:"-"`
+	ChatBefore   int    `json:"-"`
 	DaysLeft     int    `json:"-"`
 	Halloween    bool   `json:"-"`
 	DateLabel    string `json:"-"`
@@ -174,6 +181,7 @@ func (s *Server) moment() moment {
 	open, until := s.cfg.Birthday.Reveal(now, s.cfg.OpenDays)
 	var message, from, secret, lastOpenDay string
 	var locked, chat bool
+	var waits int
 	if open {
 		chat = s.cfg.Chat
 		message, from = s.cfg.Message, s.cfg.From
@@ -181,6 +189,9 @@ func (s *Server) moment() moment {
 			secret = s.cfg.Secret
 		} else {
 			locked = s.cfg.Secret != ""
+		}
+		if s.pinAfterChat() {
+			waits = s.messagesLeft()
 		}
 		lastOpenDay = until.AddDate(0, 0, -1).Format("January 2")
 	}
@@ -201,9 +212,11 @@ func (s *Server) moment() moment {
 		SecretLocked: locked,
 		SecretIntro:  s.cfg.SecretIntro,
 		Chat:         chat,
-		ChatLocked:   chat && s.cfg.SecretPIN != "",
+		ChatLocked:   chat && s.chatNeedsPIN(),
 		ChatName:     s.cfg.ChatName,
 		ChatInitial:  initial(s.cfg.ChatName),
+		SecretWaits:  waits,
+		ChatBefore:   s.cfg.ChatBeforePIN,
 		DaysLeft:     st.DaysUntil(now),
 		Halloween:    s.cfg.Halloween,
 		DateLabel:    st.Start.Format("January 2"),

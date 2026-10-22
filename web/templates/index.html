@@ -119,7 +119,24 @@
                 {{if .SecretLocked}}
                 <div class="extra">
                     <p class="extra-intro">{{.SecretIntro}}</p>
-                    <form class="extra-pin" novalidate>
+                    {{if .SecretWaits}}
+                    <div class="grow" data-left="{{.SecretWaits}}" data-total="{{.ChatBefore}}" data-friend="{{.ChatName}}">
+                        <svg class="grow-pumpkin" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+                            <path class="grow-leaf" d="M35 15c3-6 10-8 15-5-3 5-9 7-15 5z"/>
+                            <g class="grow-body">
+                                <ellipse cx="21" cy="40" rx="13" ry="17"/>
+                                <ellipse cx="43" cy="40" rx="13" ry="17"/>
+                                <ellipse class="grow-front" cx="32" cy="40" rx="12" ry="18"/>
+                            </g>
+                            <path class="grow-stem" d="M30 23c0-5 1-8 4-10l2.5 1.5c-2 2.5-2.5 5-2.5 8.5z"/>
+                        </svg>
+                        <div class="grow-text">
+                            <ol class="grow-steps" aria-hidden="true"></ol>
+                            <p class="grow-hint" aria-live="polite">Chat with {{.ChatName}} to grow the pumpkin: {{.SecretWaits}} more {{if eq .SecretWaits 1}}message{{else}}messages{{end}} until your PIN.</p>
+                        </div>
+                    </div>
+                    {{end}}
+                    <form class="extra-pin" novalidate{{if .SecretWaits}} hidden{{end}}>
                         <label class="extra-pin-label" for="pin">Enter your PIN to reveal it</label>
                         <div class="extra-pin-row">
                             <input id="pin" name="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="12" required>

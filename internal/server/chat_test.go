@@ -375,7 +375,8 @@ func TestChatNotesHerAnswers(t *testing.T) {
 	postChat(t, h, `{"pin":"482916","messages":[{"from":"me","text":"hi"}]}`)
 	// The friend's reply failed: her answer is noted all the same.
 	s.friend = (&stubFriend{err: errFriendAway}).run
-	postChat(t, h, `{"pin":"482916","messages":[{"from":"me","text":"hi"},{"from":"friend","text":"What makes you laugh?\nBe honest"},{"from":"me","text":"Cats falling off sofas"}]}`)
+	postChat(t, h, `{"pin":"482916","messages":[{"from":"me","text":"hi"},`+
+		`{"from":"friend","text":"What makes you laugh?\nBe honest"},{"from":"me","text":"Cats falling off sofas"}]}`)
 
 	b, err := os.ReadFile(notes)
 	if err != nil {

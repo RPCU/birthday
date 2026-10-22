@@ -906,6 +906,49 @@ g:nth-of-type(3n) > .pennant {
 .fleck:nth-of-type(3) { left: 38%; animation-duration: 23s; animation-delay: -8s; }
 .fleck:nth-of-type(4) { left: 67%; animation-delay: -17s; }
 .fleck:nth-of-type(5) { left: 52%; animation-duration: 27s; animation-delay: -1s; }
+.fleck:nth-of-type(6) { left: 4%; animation-duration: 24s; animation-delay: -10s; }
+.fleck:nth-of-type(7) { left: 93%; animation-delay: -6s; }
+.fleck:nth-of-type(8) { left: 27%; animation-duration: 26s; animation-delay: -19s; }
+
+/* Once the card is open: a few balloons drift up past the edges. */
+.balloon {
+    position: absolute;
+    bottom: -9rem;
+    width: 2.6rem;
+    opacity: 0.6;
+    overflow: visible;
+    animation: balloon 34s linear infinite;
+}
+
+.balloon ellipse {
+    fill: var(--rose);
+}
+
+.balloon-knot {
+    fill: var(--rose);
+}
+
+.balloon-string {
+    fill: none;
+    stroke: var(--muted);
+    stroke-width: 0.8;
+    opacity: 0.6;
+}
+
+.balloon-a { left: 5%; animation-delay: -6s; }
+.balloon-b { right: 6%; width: 2.2rem; animation-duration: 40s; animation-delay: -22s; }
+.balloon-c { left: 16%; width: 1.9rem; animation-duration: 46s; animation-delay: -33s; }
+
+.balloon-b ellipse,
+.balloon-b .balloon-knot { fill: var(--gold); }
+.balloon-c ellipse,
+.balloon-c .balloon-knot { fill: var(--blush); }
+
+@keyframes balloon {
+    from { transform: translateY(0) rotate(-3deg); }
+    50% { transform: translateY(-62vh) translateX(1.4rem) rotate(3deg); }
+    to { transform: translateY(calc(-100vh - 12rem)) rotate(-3deg); }
+}
 
 @keyframes sway {
     0%, 100% { rotate: -3deg; }
@@ -1211,7 +1254,8 @@ g:nth-of-type(3n) > .pennant {
 
     .sky span,
     .bat,
-    .fleck {
+    .fleck,
+    .balloon {
         display: none;
     }
 

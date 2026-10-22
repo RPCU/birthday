@@ -248,7 +248,7 @@ func TestBuildupGrowsOverTheLastTenDays(t *testing.T) {
 		{10, 1, 1, 0},
 		{15, 6, 6, 3},
 		{19, 10, 10, 5},
-		{20, 0, 0, 0}, // the day itself has its own party
+		{20, 10, 10, 8}, // the day itself, and while the card is open: all of it
 	} {
 		page := get(t, newTestServer(t, time.Date(2026, time.July, c.day, 12, 0, 0, 0, time.UTC), "Chihiro"), "/").Body.String()
 		got := [3]int{strings.Count(page, `class="pennant `), strings.Count(page, "<i></i>"), strings.Count(page, `class="fleck"`)}

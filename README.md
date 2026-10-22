@@ -38,6 +38,7 @@ which the image ships.
 | `BIRTHDAY_CHAT_HISTORY` | no     | `true`                       | Keep today's conversation (see [Chat friend](#chat-friend)).            |
 | `BIRTHDAY_CHAT_NOTES`   | no     | `true`                       | Keep their answers for you (see [Chat friend](#chat-friend)).           |
 | `BIRTHDAY_CHAT_BEFORE_PIN` | no  | `5`                          | Messages to the friend, after the PIN, before the secret (0 to 50).     |
+| `BIRTHDAY_CHAT_COUNT_RESET` | no | `true`                       | Start those messages over on every visit (`false`: once is enough).     |
 | `BIRTHDAY_CHAT_MODEL` | no       | `sonnet`                     | Claude model (`sonnet`, `opus`, `haiku` or a full model ID).           |
 | `BIRTHDAY_CHAT_COMMAND` | no     | `claude`                     | The Claude Code CLI.                                                   |
 | `BIRTHDAY_HOST`       | no       | all interfaces               | Listen address.                                                        |
@@ -80,9 +81,10 @@ the friend `BIRTHDAY_CHAT_BEFORE_PIN` messages (5; `0` shows it with the PIN
 right away). Meanwhile a pumpkin ripens with each message, with a dot per
 message and a hint at each step; once it's ripe, the secret shows by itself
 (the same PIN). `POST /api/reveal` answers 409 until then (without costing a
-PIN try). The count lives next to the login
-(`$CLAUDE_CONFIG_DIR/birthday-talked`, shared by the replicas) and never
-resets; delete the file to start over.
+PIN try). The count starts over every time the PIN opens the chat (so on
+every visit); with `BIRTHDAY_CHAT_COUNT_RESET=false` it never resets, and
+once reached the PIN reveals the secret right away. It lives next to the
+login (`$CLAUDE_CONFIG_DIR/birthday-talked`, shared by the replicas).
 
 **Their answers.** Every message they send is added, after the friend's line
 it answers, to `$CLAUDE_CONFIG_DIR/birthday-answers.md`, next to the login.

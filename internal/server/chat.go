@@ -94,7 +94,9 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if len(req.Messages) == 0 {
-		// The PIN is right (or not needed): today's conversation so far.
+		// The PIN is right (or not needed): today's conversation so far, and
+		// a fresh count toward the secret.
+		s.resetTalk()
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(savedChat{Messages: append([]chatMessage{}, s.loadChat()...)})
 		return

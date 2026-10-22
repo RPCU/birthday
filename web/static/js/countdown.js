@@ -241,7 +241,11 @@
         show();
 
         grew = () => {
-            if (left <= 0) return;
+            if (left <= 0) {
+                // Ripe, but the secret didn't come: try again.
+                ripe();
+                return;
+            }
             left--;
             show();
             pumpkin.classList.remove("is-growing");
@@ -479,7 +483,7 @@
             } catch {
                 // Below.
             }
-            grow.querySelector(".grow-hint").textContent = "Ripe! 🎃 Reload the page and enter your PIN to open your surprise.";
+            grow.querySelector(".grow-hint").textContent = "Ripe! 🎃 Send one more message to open your surprise.";
         };
     } else if (pinForm) {
         wirePin(

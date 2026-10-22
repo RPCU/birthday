@@ -139,8 +139,11 @@ type Config struct {
 	// chat friend, once the PIN opened the chat, before the secret shows (0:
 	// the PIN shows it right away). It applies with the chat, a secret and
 	// its PIN. ChatTalkedPath keeps the count next to the login.
+	// ChatCountReset starts the count over every time the PIN opens the chat;
+	// without it, once reached it stays reached.
 	ChatBeforePIN  int
 	ChatTalkedPath string
+	ChatCountReset bool
 	// ChatFallback holds the friend's canned replies, used in turn when
 	// Claude can't answer.
 	ChatFallback []string
@@ -226,6 +229,11 @@ func Load(getenv func(string) string) (Config, error) {
 	}
 	if dir := claudeDir(getenv); dir != "" {
 		cfg.ChatTalkedPath = filepath.Join(dir, "birthday-talked")
+	}
+	if reset, err := boolOr(getenv("BIRTHDAY_CHAT_COUNT_RESET"), true); err != nil {
+		errs = append(errs, fmt.Errorf("BIRTHDAY_CHAT_COUNT_RESET %q: want true or false", getenv("BIRTHDAY_CHAT_COUNT_RESET")))
+	} else {
+		cfg.ChatCountReset = reset
 	}
 	cfg.ChatFallback = DefaultChatFallback
 	if v := strings.TrimSpace(getenv("BIRTHDAY_CHAT_FALLBACK")); v != "" {

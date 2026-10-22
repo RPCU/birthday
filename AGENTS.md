@@ -89,7 +89,8 @@ Use `devenv shell -- <cmd>`, which provides Go, gofumpt, golines and air.
   With `BIRTHDAY_CHAT_BEFORE_PIN` (`talk.go`), the PIN opens the chat (it
   stays behind the PIN) and the secret waits for that many messages to the
   friend: `/api/reveal` answers 409 until the count
-  (`$CLAUDE_CONFIG_DIR/birthday-talked`, never reset) is reached, and the
+  (`$CLAUDE_CONFIG_DIR/birthday-talked`, reset each time the PIN opens the
+  chat unless `BIRTHDAY_CHAT_COUNT_RESET=false`) is reached, and the
   page grows a pumpkin with hints, then reveals with the same PIN.
 - Before it unlocks, a teaser (`BIRTHDAY_TEASER`, gift box) stands in for
   the card. It must stay generic: never derive it from the message or the

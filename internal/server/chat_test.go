@@ -395,7 +395,7 @@ func TestChatNotesHerAnswers(t *testing.T) {
 func TestFriendGetsToKnowThemGently(t *testing.T) {
 	s := newServer(t, time.Date(2026, time.July, 20, 8, 0, 0, 0, time.UTC), "Chihiro", withChat)
 	p := s.friendSystemPrompt()
-	for _, want := range []string{"Getting to know Chihiro", "Never pry", "one light, open question", "the friend who made this page can read it"} {
+	for _, want := range []string{"Getting to know Chihiro", "favourite flowers", "Never pry", "one light question", "the friend who made this page can read it"} {
 		if !strings.Contains(p, want) {
 			t.Errorf("system prompt lacks %q", want)
 		}

@@ -43,6 +43,13 @@ func (r *statusRecorder) WriteHeader(code int) {
 	r.ResponseWriter.WriteHeader(code)
 }
 
+// Unwrap lets http.ResponseController reach the real writer: without it the
+// chat's Flush and SetWriteDeadline fail silently, nothing reaches the
+// gateway until the whole reply is done, and it gives up with a 504.
+func (r *statusRecorder) Unwrap() http.ResponseWriter {
+	return r.ResponseWriter
+}
+
 func (s *Server) logRequests(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Probes hit this every few seconds; keep them out of the logs.

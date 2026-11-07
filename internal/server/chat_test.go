@@ -120,6 +120,29 @@ func TestChatStreamsTheFriend(t *testing.T) {
 	}
 }
 
+// The headers must leave before Claude Code answers, through the logging and
+// security middleware: a gateway that sees nothing for 15s answers 504.
+func TestChatFlushesBeforeTheFriendAnswers(t *testing.T) {
+	onTheDay := time.Date(2026, time.July, 20, 8, 0, 0, 0, time.UTC)
+	s := newServer(t, onTheDay, "Chihiro", withChat)
+	rec := httptest.NewRecorder()
+	flushed := false
+	s.friend = func(_ context.Context, _, _ string, emit func(string)) error {
+		flushed = rec.Flushed
+		emit("Hi!")
+		return nil
+	}
+	req := httptest.NewRequest(http.MethodPost, "/api/chat", strings.NewReader(hello))
+	req.Header.Set("Content-Type", "application/json")
+	s.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status %d", rec.Code)
+	}
+	if !flushed {
+		t.Error("the headers weren't flushed before the friend answered")
+	}
+}
+
 func TestChatFallsBackWhenClaudeIsAway(t *testing.T) {
 	onTheDay := time.Date(2026, time.July, 20, 8, 0, 0, 0, time.UTC)
 	s := newServer(t, onTheDay, "Chihiro", withChat)
